@@ -220,7 +220,7 @@ func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 func (dsk *Disk) getTableNames() ([]string, error) {
 	var tableNames []string
 
-	glob := filepath.Join(dsk.path, "*") + dsk.ext
+	glob := filepath.Join(dsk.path, "*"+dsk.ext)
 	files, err := filepath.Glob(glob)
 	if err != nil {
 		return nil, err
