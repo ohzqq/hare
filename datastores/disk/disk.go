@@ -1,8 +1,10 @@
 package disk
 
 import (
-	"io/ioutil"
+	"bytes"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/jameycribbs/hare/dberr"
@@ -161,7 +163,7 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 
 	tableFile.close()
 
-	if err := os.Remove(dsk.path + "/" + tableName + dsk.ext); err != nil {
+	if err := os.Remove(dsk.getTablePath(tableName)); err != nil {
 		return err
 	}
 
@@ -204,9 +206,67 @@ func (dsk *Disk) UpdateRec(tableName string, id int, rec []byte) error {
 	return nil
 }
 
+// CompactTable takes a table name and compacts that table file on the
+// disk. (Taken from the example)
+func (dsk *Disk) CompactTable(tableName string) error {
+	return dsk.compactFile(tableName)
+}
+
 //******************************************************************************
 // UNEXPORTED METHODS
 //******************************************************************************
+
+func (dsk *Disk) compactFile(tableName string) error {
+	tableFile, err := dsk.getTableFile(tableName)
+	if err != nil {
+		return err
+	}
+	defer tableFile.close()
+
+	tablePath := dsk.getTablePath(tableName)
+	backupFilepath := strings.TrimSuffix(tablePath, dsk.ext) + ".old"
+
+	cmd := exec.Command("cp", tablePath, backupFilepath)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// copy all records
+	recs := make(map[int][]byte)
+
+	ids, err := dsk.IDs(tableName)
+	if err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		r, err := tableFile.readRec(id)
+		if err != nil {
+			return err
+		}
+		recs[id] = bytes.TrimSuffix(r, []byte("\n"))
+	}
+
+	// backup table
+	err = dsk.RemoveTable(tableName)
+	if err != nil {
+		return err
+	}
+
+	err = dsk.CreateTable(tableName)
+	if err != nil {
+		return err
+	}
+
+	for id, rec := range recs {
+		err = dsk.InsertRec(tableName, id, rec)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 	tableFile, ok := dsk.tableFiles[tableName]
@@ -217,27 +277,25 @@ func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 	return tableFile, nil
 }
 
+func (dsk *Disk) getTablePath(tableName string) string {
+	if dsk.TableExists(tableName) {
+		return filepath.Join(dsk.path, tableName+dsk.ext)
+	}
+	return ""
+}
+
 func (dsk *Disk) getTableNames() ([]string, error) {
 	var tableNames []string
 
-	files, err := ioutil.ReadDir(dsk.path)
+	glob := filepath.Join(dsk.path, "*"+dsk.ext)
+	files, err := filepath.Glob(glob)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, file := range files {
-		fileName := file.Name()
-
-		// If entry is sub dir, current dir, or parent dir, skip it.
-		if file.IsDir() || fileName == "." || fileName == ".." {
-			continue
-		}
-
-		if !strings.HasSuffix(fileName, dsk.ext) {
-			continue
-		}
-
-		tableNames = append(tableNames, strings.TrimSuffix(fileName, dsk.ext))
+		name := strings.TrimSuffix(filepath.Base(file), dsk.ext)
+		tableNames = append(tableNames, name)
 	}
 
 	return tableNames, nil
@@ -277,7 +335,8 @@ func (dsk Disk) openFile(tableName string, createIfNeeded bool) (*os.File, error
 		osFlag = os.O_RDWR
 	}
 
-	filePtr, err := os.OpenFile(dsk.path+"/"+tableName+dsk.ext, osFlag, 0660)
+	p := filepath.Join(dsk.path, tableName+dsk.ext)
+	filePtr, err := os.OpenFile(p, osFlag, 0660)
 	if err != nil {
 		return nil, err
 	}
