@@ -1,6 +1,7 @@
 package disk
 
 import (
+	"bufio"
 	"os"
 	"path/filepath"
 	"strings"
@@ -204,9 +205,71 @@ func (dsk *Disk) UpdateRec(tableName string, id int, rec []byte) error {
 	return nil
 }
 
+// CompactTable takes a table name and compacts that table file on the
+// disk. (Taken from the example)
+func (dsk *Disk) CompactTable(tableName string) error {
+	tableFile, err := dsk.getTableFile(tableName)
+	if err != nil {
+		return err
+	}
+	tableFile.close()
+
+	if err := os.Remove(dsk.path + "/" + tableName + dsk.ext); err != nil {
+		return err
+	}
+
+	delete(dsk.tableFiles, tableName)
+
+	return nil
+}
+
 //******************************************************************************
 // UNEXPORTED METHODS
 //******************************************************************************
+
+func (dsk *Disk) compactFile(tableName string) error {
+	//tableFile := dsk.getTableFile(tableName)
+	tablePath := dsk.getTableFilePath(tableName)
+
+	backupFilepath := strings.TrimSuffix(tablePath, dsk.ext) + ".old"
+
+	// Move the table to a backup file.
+	if err := os.Rename(tablePath, backupFilepath); err != nil {
+		return err
+	}
+
+	oldfile, err := os.Open(backupFilepath)
+	if err != nil {
+		return err
+	}
+	defer oldfile.Close()
+
+	newfile, err := os.Create(tablePath)
+	if err != nil {
+		return err
+	}
+	defer newfile.Close()
+
+	oldfileScanner := bufio.NewScanner(oldfile)
+	for oldfileScanner.Scan() {
+		str := strings.TrimRight(oldfileScanner.Text(), "X")
+
+		if len(str) > 0 {
+			_, err := newfile.WriteString(str + "\n")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := oldfileScanner.Err(); err != nil {
+		return err
+	}
+
+	newfile.Sync()
+
+	return nil
+}
 
 func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 	tableFile, ok := dsk.tableFiles[tableName]
@@ -215,6 +278,13 @@ func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 	}
 
 	return tableFile, nil
+}
+
+func (dsk *Disk) getTableFilePath(tableName string) string {
+	if dsk.TableExists(tableName) {
+		return filepath.Join(dsk.path, tableName+dsk.ext)
+	}
+	return ""
 }
 
 func (dsk *Disk) getTableNames() ([]string, error) {
@@ -268,7 +338,8 @@ func (dsk Disk) openFile(tableName string, createIfNeeded bool) (*os.File, error
 		osFlag = os.O_RDWR
 	}
 
-	filePtr, err := os.OpenFile(dsk.path+"/"+tableName+dsk.ext, osFlag, 0660)
+	p := filepath.Join(dsk.path, tableName+dsk.ext)
+	filePtr, err := os.OpenFile(p, osFlag, 0660)
 	if err != nil {
 		return nil, err
 	}

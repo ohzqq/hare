@@ -22,6 +22,8 @@ func newTableFile(tableName string, filePtr *os.File) (*tableFile, error) {
 	var recLen int
 	var recMap map[string]interface{}
 
+	println(filePtr.Name())
+
 	tableFile := tableFile{ptr: filePtr}
 	tableFile.offsets = make(map[int]int64)
 

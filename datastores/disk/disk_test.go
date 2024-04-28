@@ -440,6 +440,39 @@ func TestTableNamesDiskTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
+func TestTablePathsDiskTests(t *testing.T) {
+	var tests = []func(t *testing.T){
+		func(t *testing.T) {
+			//TableNames...
+
+			dsk := newTestDisk(t)
+			defer dsk.Close()
+
+			want := []string{"testdata/contacts.json"}
+			var got []string
+			for _, name := range dsk.TableNames() {
+				tp := dsk.getTableFilePath(name)
+				got = append(got, tp)
+			}
+
+			sort.Strings(got)
+
+			if len(want) != len(got) {
+				t.Errorf("want %v; got %v", want, got)
+			} else {
+
+				for i := range want {
+					if want[i] != got[i] {
+						t.Errorf("want %v; got %v", want, got)
+					}
+				}
+			}
+		},
+	}
+
+	runTestFns(t, tests)
+}
+
 func TestUpdateRecDiskTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
