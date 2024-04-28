@@ -1,3 +1,3 @@
-module github.com/jameycribbs/hare
+module github.com/ohzqq/hare
 
-go 1.15
+go 1.21
