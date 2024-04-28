@@ -1,8 +1,8 @@
 package disk
 
 import (
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jameycribbs/hare/dberr"
@@ -220,24 +220,15 @@ func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 func (dsk *Disk) getTableNames() ([]string, error) {
 	var tableNames []string
 
-	files, err := ioutil.ReadDir(dsk.path)
+	glob := filepath.Join(dsk.path, "*") + dsk.ext
+	files, err := filepath.Glob(glob)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, file := range files {
-		fileName := file.Name()
-
-		// If entry is sub dir, current dir, or parent dir, skip it.
-		if file.IsDir() || fileName == "." || fileName == ".." {
-			continue
-		}
-
-		if !strings.HasSuffix(fileName, dsk.ext) {
-			continue
-		}
-
-		tableNames = append(tableNames, strings.TrimSuffix(fileName, dsk.ext))
+		name := strings.TrimSuffix(filepath.Base(file), dsk.ext)
+		tableNames = append(tableNames, name)
 	}
 
 	return tableNames, nil
