@@ -451,7 +451,7 @@ func TestTablePathsDiskTests(t *testing.T) {
 			want := []string{"testdata/contacts.json"}
 			var got []string
 			for _, name := range dsk.TableNames() {
-				tp := dsk.getTableFilePath(name)
+				tp := dsk.getTablePath(name)
 				got = append(got, tp)
 			}
 
@@ -466,6 +466,33 @@ func TestTablePathsDiskTests(t *testing.T) {
 						t.Errorf("want %v; got %v", want, got)
 					}
 				}
+			}
+		},
+	}
+
+	runTestFns(t, tests)
+}
+
+func TestCompactTableTests(t *testing.T) {
+	var tests = []func(t *testing.T){
+		func(t *testing.T) {
+			//TableNames...
+
+			dsk := newTestDisk(t)
+			defer dsk.Close()
+
+			err := dsk.CompactTable("contacts")
+
+			tableFile, err := dsk.getTableFile("contacts")
+			if err != nil {
+				t.Error(err)
+			}
+
+			want := 4
+			got := len(tableFile.offsets)
+
+			if want != got {
+				t.Errorf("want %v; got %v", want, got)
 			}
 		},
 	}

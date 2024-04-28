@@ -1,8 +1,9 @@
 package disk
 
 import (
-	"bufio"
+	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -162,7 +163,7 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 
 	tableFile.close()
 
-	if err := os.Remove(dsk.path + "/" + tableName + dsk.ext); err != nil {
+	if err := os.Remove(dsk.getTablePath(tableName)); err != nil {
 		return err
 	}
 
@@ -208,19 +209,7 @@ func (dsk *Disk) UpdateRec(tableName string, id int, rec []byte) error {
 // CompactTable takes a table name and compacts that table file on the
 // disk. (Taken from the example)
 func (dsk *Disk) CompactTable(tableName string) error {
-	tableFile, err := dsk.getTableFile(tableName)
-	if err != nil {
-		return err
-	}
-	tableFile.close()
-
-	if err := os.Remove(dsk.path + "/" + tableName + dsk.ext); err != nil {
-		return err
-	}
-
-	delete(dsk.tableFiles, tableName)
-
-	return nil
+	return dsk.compactFile(tableName)
 }
 
 //******************************************************************************
@@ -228,45 +217,53 @@ func (dsk *Disk) CompactTable(tableName string) error {
 //******************************************************************************
 
 func (dsk *Disk) compactFile(tableName string) error {
-	//tableFile := dsk.getTableFile(tableName)
-	tablePath := dsk.getTableFilePath(tableName)
+	tableFile, err := dsk.getTableFile(tableName)
+	if err != nil {
+		return err
+	}
+	defer tableFile.close()
 
+	tablePath := dsk.getTablePath(tableName)
 	backupFilepath := strings.TrimSuffix(tablePath, dsk.ext) + ".old"
 
-	// Move the table to a backup file.
-	if err := os.Rename(tablePath, backupFilepath); err != nil {
+	cmd := exec.Command("cp", tablePath, backupFilepath)
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 
-	oldfile, err := os.Open(backupFilepath)
+	// copy all records
+	recs := make(map[int][]byte)
+
+	ids, err := dsk.IDs(tableName)
 	if err != nil {
 		return err
 	}
-	defer oldfile.Close()
 
-	newfile, err := os.Create(tablePath)
+	for _, id := range ids {
+		r, err := tableFile.readRec(id)
+		if err != nil {
+			return err
+		}
+		recs[id] = bytes.TrimSuffix(r, []byte("\n"))
+	}
+
+	// backup table
+	err = dsk.RemoveTable(tableName)
 	if err != nil {
 		return err
 	}
-	defer newfile.Close()
 
-	oldfileScanner := bufio.NewScanner(oldfile)
-	for oldfileScanner.Scan() {
-		str := strings.TrimRight(oldfileScanner.Text(), "X")
+	err = dsk.CreateTable(tableName)
+	if err != nil {
+		return err
+	}
 
-		if len(str) > 0 {
-			_, err := newfile.WriteString(str + "\n")
-			if err != nil {
-				return err
-			}
+	for id, rec := range recs {
+		err = dsk.InsertRec(tableName, id, rec)
+		if err != nil {
+			return err
 		}
 	}
-
-	if err := oldfileScanner.Err(); err != nil {
-		return err
-	}
-
-	newfile.Sync()
 
 	return nil
 }
@@ -280,7 +277,7 @@ func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
 	return tableFile, nil
 }
 
-func (dsk *Disk) getTableFilePath(tableName string) string {
+func (dsk *Disk) getTablePath(tableName string) string {
 	if dsk.TableExists(tableName) {
 		return filepath.Join(dsk.path, tableName+dsk.ext)
 	}
