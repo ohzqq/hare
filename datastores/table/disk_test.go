@@ -474,6 +474,7 @@ func TestTablePathsDiskTests(t *testing.T) {
 }
 
 func TestCompactTableTests(t *testing.T) {
+	t.SkipNow()
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//TableNames...

@@ -22,32 +22,20 @@ type TableIO interface {
 	io.Closer
 }
 
-func NewTable(rw TableIO) (*tableFile, error) {
-
-	offsets, err := CalculateOffsets(rw)
-	if err != nil {
-		return nil, err
-	}
-
-	tableFile := tableFile{
-		ptr:     rw,
-		offsets: offsets,
-	}
-
-	return &tableFile, nil
-}
-
-func CalculateOffsets(s io.ReadSeeker) (map[int]int64, error) {
-
-	offsets := make(map[int]int64)
+func NewTable(filePtr TableIO) (*tableFile, error) {
+	var currentOffset int64
 	var totalOffset int64
 	var recLen int
 	var recMap map[string]interface{}
-	var currentOffset int64
 
-	r := bufio.NewReader(s)
+	tableFile := tableFile{
+		ptr: filePtr,
+	}
+	tableFile.offsets = make(map[int]int64)
 
-	_, err := s.Seek(0, 0)
+	r := bufio.NewReader(filePtr)
+
+	_, err := filePtr.Seek(0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +43,9 @@ func CalculateOffsets(s io.ReadSeeker) (map[int]int64, error) {
 	for {
 		rec, err := r.ReadBytes('\n')
 
+		currentOffset = totalOffset
 		recLen = len(rec)
 		totalOffset += int64(recLen)
-		currentOffset = totalOffset
 
 		if err == io.EOF {
 			break
@@ -78,11 +66,10 @@ func CalculateOffsets(s io.ReadSeeker) (map[int]int64, error) {
 		}
 		recMapID := int(recMap["id"].(float64))
 
-		//println(string(rec))
-		offsets[recMapID] = currentOffset
+		tableFile.offsets[recMapID] = currentOffset
 	}
 
-	return offsets, nil
+	return &tableFile, nil
 }
 
 func (t *tableFile) close() error {

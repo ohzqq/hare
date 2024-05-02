@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
 func TestNewCloseDiskTests(t *testing.T) {

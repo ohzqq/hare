@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
 func TestNewCloseTableFileTests(t *testing.T) {

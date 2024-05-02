@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
 // Disk is a struct that holds a map of all the
