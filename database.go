@@ -1,12 +1,12 @@
-//Package hare implements a simple DBMS that stores it's data
-//in newline-delimited json files.
+// Package hare implements a simple DBMS that stores it's data
+// in newline-delimited json files.
 package hare
 
 import (
 	"encoding/json"
 	"sync"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
 // Record interface defines the methods a struct representing

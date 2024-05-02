@@ -1,6 +1,6 @@
 package ram
 
-import "github.com/jameycribbs/hare/dberr"
+import "github.com/ohzqq/hare/dberr"
 
 type table struct {
 	records map[int][]byte

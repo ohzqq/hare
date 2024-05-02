@@ -1,6 +1,6 @@
 package ram
 
-import "github.com/jameycribbs/hare/dberr"
+import "github.com/ohzqq/hare/dberr"
 
 // Ram is a struct that holds a map of all the
 // tables in the datastore.

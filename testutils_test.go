@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jameycribbs/hare/datastores/disk"
-	"github.com/jameycribbs/hare/datastores/ram"
+	"github.com/ohzqq/hare/datastores/disk"
+	"github.com/ohzqq/hare/datastores/ram"
+	"github.com/ohzqq/hare/datastores/table"
 )
 
 type Contact struct {
@@ -62,11 +63,35 @@ func runTestFns(t *testing.T, testFns []func(*Database) func(*testing.T)) {
 			t.Fatal(err)
 		}
 		defer ramDB.Close()
-
 		t.Run(fmt.Sprintf("ram/%s", tstNum), fn(ramDB))
+
+		memDS := newTestRam(t)
+		memDB, err := New(memDS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer memDB.Close()
+
+		t.Run(fmt.Sprintf("table/%s", tstNum), fn(memDB))
 
 		testTeardown(t)
 	}
+}
+
+func newTestRam(t *testing.T) *table.Ram {
+	d, err := os.ReadFile("./testdata/contacts.bak")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables := map[string][]byte{
+		"contacts": d,
+	}
+
+	ram, err := table.NewRam(tables)
+	if err != nil {
+		t.Fatalf("newTestRam error %v\n", err)
+	}
+	return ram
 }
 
 func checkErr(t *testing.T, wantErr error, gotErr error) {
