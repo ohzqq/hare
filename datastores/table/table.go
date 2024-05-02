@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"os"
-	"path/filepath"
 )
 
 const dummyRune = 'X'
@@ -18,21 +16,16 @@ type Table struct {
 	name    string
 }
 
-func File(path, tableName, ext string) (*Table, error) {
-	var osFlag int
+type TableIO interface {
+	io.Reader
+	io.Writer
+	io.Seeker
+	io.Closer
+}
 
-	if createIfNeeded {
-		osFlag = os.O_CREATE | os.O_RDWR
-	} else {
-		osFlag = os.O_RDWR
-	}
-
-	p := filepath.Join(path, tableName+ext)
-	filePtr, err := os.OpenFile(p, osFlag, 0660)
-	if err != nil {
-		return nil, err
-	}
-
+type memIO struct {
+	r *bytes.Reader
+	w *bytes.Buffer
 }
 
 func NewTable(rw io.ReadWriter) (*Table, error) {
