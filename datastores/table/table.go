@@ -9,9 +9,9 @@ import (
 
 const dummyRune = 'X'
 
-type Table struct {
+type tableFile struct {
 	buf     *bytes.Reader
-	w       io.Writer
+	ptr     io.Writer
 	offsets map[int]int64
 	name    string
 }
@@ -23,21 +23,15 @@ type TableIO interface {
 	io.Closer
 }
 
-func NewTable(rw TableIO) (*Table, error) {
-	d, err := io.ReadAll(rw)
-	if err != nil {
-		return nil, err
-	}
-	buf := bytes.NewReader(d)
+func NewTable(rw TableIO) (*tableFile, error) {
 
-	offsets, err := CalculateOffsets(buf)
+	offsets, err := CalculateOffsets(rw)
 	if err != nil {
 		return nil, err
 	}
 
-	tableFile := Table{
-		buf:     buf,
-		w:       rw,
+	tableFile := tableFile{
+		ptr:     rw,
 		offsets: offsets,
 	}
 
