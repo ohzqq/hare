@@ -19,6 +19,8 @@ type Record interface {
 
 type DataStore interface {
 	Close() error
+	CreateTable(string) error
+	RemoveTable(string) error
 }
 
 type datastorage interface {
