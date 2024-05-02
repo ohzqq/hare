@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ohzqq/hare/datastores/disk"
 	"github.com/ohzqq/hare/datastores/ram"
 	"github.com/ohzqq/hare/datastores/table"
 )
@@ -40,7 +39,7 @@ func runTestFns(t *testing.T, testFns []func(*Database) func(*testing.T)) {
 
 		testSetup(t)
 
-		diskDS, err := disk.New("./testdata", ".json")
+		diskDS, err := table.NewDisk("./testdata", ".json")
 		if err != nil {
 			t.Fatal(err)
 		}
