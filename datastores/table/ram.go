@@ -41,7 +41,7 @@ func NewRam(tables map[string][]byte) (*Ram, error) {
 // Close closes the datastore.
 func (ram *Ram) Close() error {
 	for _, tableFile := range ram.tableFiles {
-		if err := tableFile.close(); err != nil {
+		if err := tableFile.Close(); err != nil {
 			return err
 		}
 	}
@@ -76,7 +76,7 @@ func (ram *Ram) DeleteRec(tableName string, id int) error {
 		return err
 	}
 
-	if err = tableFile.deleteRec(id); err != nil {
+	if err = tableFile.DeleteRec(id); err != nil {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func (ram *Ram) GetLastID(tableName string) (int, error) {
 		return 0, err
 	}
 
-	return tableFile.getLastID(), nil
+	return tableFile.GetLastID(), nil
 }
 
 // IDs takes a table name and returns an array of all record IDs
@@ -102,7 +102,7 @@ func (ram *Ram) IDs(tableName string) ([]int, error) {
 		return nil, err
 	}
 
-	return tableFile.ids(), nil
+	return tableFile.IDs(), nil
 }
 
 // InsertRec takes a table name, a record id, and a byte array and adds
@@ -113,19 +113,19 @@ func (ram *Ram) InsertRec(tableName string, id int, rec []byte) error {
 		return err
 	}
 
-	ids := tableFile.ids()
+	ids := tableFile.IDs()
 	for _, i := range ids {
 		if id == i {
 			return dberr.ErrIDExists
 		}
 	}
 
-	offset, err := tableFile.offsetForWritingRec(len(rec))
+	offset, err := tableFile.OffsetForWritingRec(len(rec))
 	if err != nil {
 		return err
 	}
 
-	if err := tableFile.writeRec(offset, 0, rec); err != nil {
+	if err := tableFile.WriteRec(offset, 0, rec); err != nil {
 		return err
 	}
 
@@ -142,7 +142,7 @@ func (ram *Ram) ReadRec(tableName string, id int) ([]byte, error) {
 		return nil, err
 	}
 
-	rec, err := tableFile.readRec(id)
+	rec, err := tableFile.ReadRec(id)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (ram *Ram) RemoveTable(tableName string) error {
 		return err
 	}
 
-	tableFile.close()
+	tableFile.Close()
 
 	delete(ram.tableFiles, tableName)
 
@@ -192,7 +192,7 @@ func (ram *Ram) UpdateRec(tableName string, id int, rec []byte) error {
 		return err
 	}
 
-	if err = tableFile.updateRec(id, rec); err != nil {
+	if err = tableFile.UpdateRec(id, rec); err != nil {
 		return err
 	}
 
@@ -214,7 +214,7 @@ func (ram *Ram) closeTable(tableName string) error {
 		return dberr.ErrNoTable
 	}
 
-	if err := tableFile.close(); err != nil {
+	if err := tableFile.Close(); err != nil {
 		return err
 	}
 
