@@ -38,6 +38,21 @@ func newTestTableFile(t *testing.T) *tableFile {
 	return tf
 }
 
+func newTestTableMem(t *testing.T) *tableFile {
+	d, err := os.ReadFile("./testdata/contacts.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mem := Mem(d)
+
+	tf, err := NewTable(mem)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tf
+}
+
 func testSetup(t *testing.T) {
 	testRemoveFiles(t)
 
