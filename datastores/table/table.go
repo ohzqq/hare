@@ -23,12 +23,7 @@ type TableIO interface {
 	io.Closer
 }
 
-type memIO struct {
-	r *bytes.Reader
-	w *bytes.Buffer
-}
-
-func NewTable(rw io.ReadWriter) (*Table, error) {
+func NewTable(rw TableIO) (*Table, error) {
 	d, err := io.ReadAll(rw)
 	if err != nil {
 		return nil, err
