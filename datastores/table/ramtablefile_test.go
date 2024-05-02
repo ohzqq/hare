@@ -11,12 +11,12 @@ import (
 	"github.com/ohzqq/hare/dberr"
 )
 
-func TestNewCloseTableFileTests(t *testing.T) {
+func TestNewCloseTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//New...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			want := make(map[int]int64)
@@ -34,7 +34,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 		func(t *testing.T) {
 			//close...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			tf.close()
 
 			wantErr := dberr.ErrNoRecord
@@ -55,12 +55,12 @@ func TestNewCloseTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestDeleteRecTableFileTests(t *testing.T) {
+func TestDeleteRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//deleteRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			offset := tf.offsets[3]
@@ -93,12 +93,12 @@ func TestDeleteRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestGetLastIDTableFileTests(t *testing.T) {
+func TestGetLastIDTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//getLastID...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			want := 4
@@ -113,12 +113,12 @@ func TestGetLastIDTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestIDsTableFileTests(t *testing.T) {
+func TestIDsTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//ids...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			want := []int{1, 2, 3, 4}
@@ -141,12 +141,12 @@ func TestIDsTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestOffsetsTableFileTests(t *testing.T) {
+func TestOffsetsTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//offsetForWritingRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			tests := []struct {
@@ -171,7 +171,7 @@ func TestOffsetsTableFileTests(t *testing.T) {
 		func(t *testing.T) {
 			//offsetToFitRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			tests := []struct {
@@ -196,12 +196,12 @@ func TestOffsetsTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestOverwriteRecTableFileTests(t *testing.T) {
+func TestOverwriteRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//overwriteRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			offset := tf.offsets[3]
@@ -234,12 +234,12 @@ func TestOverwriteRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestReadRecTableFileTests(t *testing.T) {
+func TestReadRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//readRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			rec, err := tf.readRec(3)
@@ -259,12 +259,12 @@ func TestReadRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestUpdateRecTableFileTests(t *testing.T) {
+func TestUpdateRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//updateRec (fits on same line)...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			err := tf.updateRec(3, []byte("{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
@@ -294,7 +294,7 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 		func(t *testing.T) {
 			//updateRec (does not fit on same line)...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.close()
 
 			err := tf.updateRec(3, []byte("{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
@@ -326,7 +326,7 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestPadRecTableFileTests(t *testing.T) {
+func TestPadRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//padRec...

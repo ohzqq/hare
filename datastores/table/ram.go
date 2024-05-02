@@ -1,29 +1,17 @@
 package table
 
-import "bytes"
+import (
+	"github.com/dsnet/golib/memfile"
+)
 
 type memIO struct {
-	r *bytes.Reader
-	w *bytes.Buffer
+	*memfile.File
 }
 
 func Mem(d []byte) *memIO {
 	return &memIO{
-		r: bytes.NewReader(d),
-		w: bytes.NewBuffer(d),
+		File: memfile.New(d),
 	}
-}
-
-func (m *memIO) Read(p []byte) (int, error) {
-	return m.r.Read(p)
-}
-
-func (m *memIO) Seek(offset int64, whence int) (int64, error) {
-	return m.r.Seek(offset, whence)
-}
-
-func (m *memIO) Write(p []byte) (int, error) {
-	return m.w.Write(p)
 }
 
 func (m *memIO) Close() error { return nil }
