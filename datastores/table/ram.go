@@ -207,3 +207,16 @@ func (ram *Ram) getTableFile(tableName string) (*Table, error) {
 
 	return tableFile, nil
 }
+
+func (ram *Ram) closeTable(tableName string) error {
+	tableFile, ok := ram.tableFiles[tableName]
+	if !ok {
+		return dberr.ErrNoTable
+	}
+
+	if err := tableFile.close(); err != nil {
+		return err
+	}
+
+	return nil
+}

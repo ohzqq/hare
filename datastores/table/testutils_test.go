@@ -24,6 +24,22 @@ func newTestDisk(t *testing.T) *Disk {
 	return dsk
 }
 
+func newTestRam(t *testing.T) *Ram {
+	d, err := os.ReadFile("./testdata/contacts.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables := map[string][]byte{
+		"contacts": d,
+	}
+
+	ram, err := NewRam(tables)
+	if err != nil {
+		t.Fatalf("newTestRam error %v\n", err)
+	}
+	return ram
+}
+
 func newTestTableFile(t *testing.T) *Table {
 	filePtr, err := os.OpenFile("./testdata/contacts.json", os.O_RDWR, 0660)
 	if err != nil {
