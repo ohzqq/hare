@@ -23,7 +23,7 @@ func TestNewCloseRamTests(t *testing.T) {
 			wantOffsets[3] = 160
 			wantOffsets[4] = 224
 
-			gotOffsets := dsk.Tables["contacts"].offsets
+			gotOffsets := dsk.Tables["contacts"].Offsets
 
 			if !reflect.DeepEqual(wantOffsets, gotOffsets) {
 				t.Errorf("want %v; got %v", wantOffsets, gotOffsets)

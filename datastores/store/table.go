@@ -1,4 +1,4 @@
-package table
+package store
 
 import (
 	"bufio"
@@ -12,7 +12,7 @@ const dummyRune = 'X'
 
 type Table struct {
 	ptr     TableFile
-	offsets map[int]int64
+	Offsets map[int]int64
 }
 
 type TableFile interface {
@@ -29,7 +29,7 @@ func NewTable(filePtr TableFile) (*Table, error) {
 	tableFile := Table{
 		ptr: filePtr,
 	}
-	tableFile.offsets = make(map[int]int64)
+	tableFile.Offsets = make(map[int]int64)
 
 	r := bufio.NewReader(filePtr)
 
@@ -64,7 +64,7 @@ func NewTable(filePtr TableFile) (*Table, error) {
 		}
 		recMapID := int(recMap["id"].(float64))
 
-		tableFile.offsets[recMapID] = currentOffset
+		tableFile.Offsets[recMapID] = currentOffset
 	}
 
 	return &tableFile, nil
@@ -75,13 +75,13 @@ func (t *Table) Close() error {
 		return err
 	}
 
-	t.offsets = nil
+	t.Offsets = nil
 
 	return nil
 }
 
 func (t *Table) DeleteRec(id int) error {
-	offset, ok := t.offsets[id]
+	offset, ok := t.Offsets[id]
 	if !ok {
 		return dberr.ErrNoRecord
 	}
@@ -95,7 +95,7 @@ func (t *Table) DeleteRec(id int) error {
 		return err
 	}
 
-	delete(t.offsets, id)
+	delete(t.Offsets, id)
 
 	return nil
 }
@@ -103,7 +103,7 @@ func (t *Table) DeleteRec(id int) error {
 func (t *Table) GetLastID() int {
 	var lastID int
 
-	for k := range t.offsets {
+	for k := range t.Offsets {
 		if k > lastID {
 			lastID = k
 		}
@@ -113,10 +113,10 @@ func (t *Table) GetLastID() int {
 }
 
 func (t *Table) IDs() []int {
-	ids := make([]int, len(t.offsets))
+	ids := make([]int, len(t.Offsets))
 
 	i := 0
-	for id := range t.offsets {
+	for id := range t.Offsets {
 		ids[i] = id
 		i++
 	}
@@ -208,7 +208,7 @@ func (t *Table) OverwriteRec(offset int64, recLen int) error {
 }
 
 func (t *Table) ReadRec(id int) ([]byte, error) {
-	offset, ok := t.offsets[id]
+	offset, ok := t.Offsets[id]
 	if !ok {
 		return nil, dberr.ErrNoRecord
 	}
@@ -230,7 +230,7 @@ func (t *Table) ReadRec(id int) ([]byte, error) {
 func (t *Table) UpdateRec(id int, rec []byte) error {
 	recLen := len(rec)
 
-	oldRecOffset, ok := t.offsets[id]
+	oldRecOffset, ok := t.Offsets[id]
 	if !ok {
 		return dberr.ErrNoRecord
 	}
@@ -273,7 +273,7 @@ func (t *Table) UpdateRec(id int, rec []byte) error {
 
 		// Update the index with the new offset since the record is in a
 		// new position in the file.
-		t.offsets[id] = recOffset
+		t.Offsets[id] = recOffset
 	} else {
 		// Changed record is the same length as the record in the table.
 		err = t.WriteRec(oldRecOffset, 0, rec)
