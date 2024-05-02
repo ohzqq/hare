@@ -36,7 +36,7 @@ func TestNewCloseDiskTests(t *testing.T) {
 			wantOffsets[3] = 160
 			wantOffsets[4] = 224
 
-			gotOffsets := dsk.tableFiles["contacts"].offsets
+			gotOffsets := dsk.Tables["contacts"].offsets
 
 			if !reflect.DeepEqual(wantOffsets, gotOffsets) {
 				t.Errorf("want %v; got %v", wantOffsets, gotOffsets)
@@ -55,7 +55,7 @@ func TestNewCloseDiskTests(t *testing.T) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			got := dsk.tableFiles
+			got := dsk.Tables
 
 			if nil != got {
 				t.Errorf("want %v; got %v", nil, got)
@@ -484,7 +484,7 @@ func TestCompactTableTests(t *testing.T) {
 
 			err := dsk.CompactTable("contacts")
 
-			tableFile, err := dsk.getTableFile("contacts")
+			tableFile, err := dsk.GetTableFile("contacts")
 			if err != nil {
 				t.Error(err)
 			}
@@ -552,7 +552,7 @@ func TestCloseTableDiskTests(t *testing.T) {
 			dsk := newTestDisk(t)
 			defer dsk.Close()
 
-			err := dsk.closeTable("contacts")
+			err := dsk.CloseTable("contacts")
 			if err != nil {
 				t.Errorf("want %v; got %v", nil, err)
 			}
@@ -564,7 +564,7 @@ func TestCloseTableDiskTests(t *testing.T) {
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := dsk.closeTable("nonexistent")
+			gotErr := dsk.CloseTable("nonexistent")
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)

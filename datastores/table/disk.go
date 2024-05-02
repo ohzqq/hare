@@ -13,9 +13,9 @@ import (
 // Disk is a struct that holds a map of all the
 // table files in a database directory.
 type Disk struct {
-	path       string
-	ext        string
-	tableFiles map[string]*Table
+	path   string
+	ext    string
+	Tables map[string]*Table
 }
 
 func File(path, name, ext string) (TableFile, error) {
@@ -49,7 +49,7 @@ func NewDisk(path string, ext string) (*Disk, error) {
 
 // Close closes the datastore.
 func (dsk *Disk) Close() error {
-	for _, tableFile := range dsk.tableFiles {
+	for _, tableFile := range dsk.Tables {
 		if err := tableFile.Close(); err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ func (dsk *Disk) Close() error {
 
 	dsk.path = ""
 	dsk.ext = ""
-	dsk.tableFiles = nil
+	dsk.Tables = nil
 
 	return nil
 }
@@ -80,7 +80,7 @@ func (dsk *Disk) CreateTable(tableName string) error {
 		return err
 	}
 
-	dsk.tableFiles[tableName] = tableFile
+	dsk.Tables[tableName] = tableFile
 
 	return nil
 }
@@ -88,7 +88,7 @@ func (dsk *Disk) CreateTable(tableName string) error {
 // DeleteRec takes a table name and a record id and deletes
 // the associated record.
 func (dsk *Disk) DeleteRec(tableName string, id int) error {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (dsk *Disk) DeleteRec(tableName string, id int) error {
 // GetLastID takes a table name and returns the greatest record
 // id found in the table.
 func (dsk *Disk) GetLastID(tableName string) (int, error) {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return 0, err
 	}
@@ -114,7 +114,7 @@ func (dsk *Disk) GetLastID(tableName string) (int, error) {
 // IDs takes a table name and returns an array of all record IDs
 // found in the table.
 func (dsk *Disk) IDs(tableName string) ([]int, error) {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (dsk *Disk) IDs(tableName string) ([]int, error) {
 // InsertRec takes a table name, a record id, and a byte array and adds
 // the record to the table.
 func (dsk *Disk) InsertRec(tableName string, id int, rec []byte) error {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (dsk *Disk) InsertRec(tableName string, id int, rec []byte) error {
 // ReadRec takes a table name and an id, reads the record from the
 // table, and returns a populated byte array.
 func (dsk *Disk) ReadRec(tableName string, id int) ([]byte, error) {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (dsk *Disk) ReadRec(tableName string, id int) ([]byte, error) {
 // RemoveTable takes a table name and deletes that table file from the
 // disk.
 func (dsk *Disk) RemoveTable(tableName string) error {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 		return err
 	}
 
-	delete(dsk.tableFiles, tableName)
+	delete(dsk.Tables, tableName)
 
 	return nil
 }
@@ -189,7 +189,7 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 // TableExists takes a table name and returns a bool indicating
 // whether or not the table exists in the datastore.
 func (dsk *Disk) TableExists(tableName string) bool {
-	_, ok := dsk.tableFiles[tableName]
+	_, ok := dsk.Tables[tableName]
 
 	return ok
 }
@@ -198,7 +198,7 @@ func (dsk *Disk) TableExists(tableName string) bool {
 func (dsk *Disk) TableNames() []string {
 	var names []string
 
-	for k := range dsk.tableFiles {
+	for k := range dsk.Tables {
 		names = append(names, k)
 	}
 
@@ -208,7 +208,7 @@ func (dsk *Disk) TableNames() []string {
 // UpdateRec takes a table name, a record id, and a byte array and updates
 // the table record with that id.
 func (dsk *Disk) UpdateRec(tableName string, id int, rec []byte) error {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func (dsk *Disk) CompactTable(tableName string) error {
 //******************************************************************************
 
 func (dsk *Disk) compactFile(tableName string) error {
-	tableFile, err := dsk.getTableFile(tableName)
+	tableFile, err := dsk.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -282,8 +282,8 @@ func (dsk *Disk) compactFile(tableName string) error {
 	return nil
 }
 
-func (dsk *Disk) getTableFile(tableName string) (*Table, error) {
-	tableFile, ok := dsk.tableFiles[tableName]
+func (dsk *Disk) GetTableFile(tableName string) (*Table, error) {
+	tableFile, ok := dsk.Tables[tableName]
 	if !ok {
 		return nil, dberr.ErrNoTable
 	}
@@ -316,7 +316,7 @@ func (dsk *Disk) getTableNames() ([]string, error) {
 }
 
 func (dsk *Disk) init() error {
-	dsk.tableFiles = make(map[string]*Table)
+	dsk.Tables = make(map[string]*Table)
 
 	tableNames, err := dsk.getTableNames()
 	if err != nil {
@@ -334,7 +334,7 @@ func (dsk *Disk) init() error {
 			return err
 		}
 
-		dsk.tableFiles[tableName] = tableFile
+		dsk.Tables[tableName] = tableFile
 	}
 
 	return nil
@@ -358,8 +358,8 @@ func (dsk Disk) openFile(tableName string, createIfNeeded bool) (*os.File, error
 	return filePtr, nil
 }
 
-func (dsk *Disk) closeTable(tableName string) error {
-	tableFile, ok := dsk.tableFiles[tableName]
+func (dsk *Disk) CloseTable(tableName string) error {
+	tableFile, ok := dsk.Tables[tableName]
 	if !ok {
 		return dberr.ErrNoTable
 	}

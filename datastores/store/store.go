@@ -1,11 +1,16 @@
-package datastores
+package store
 
 import (
+	"github.com/ohzqq/hare/datastores/table"
 	"github.com/ohzqq/hare/dberr"
 )
 
 type Store struct {
-	tableFiles map[string]*Table
+	Tables map[string]*table.Table
+}
+
+func New() *Store {
+	return &Store{Tables: make(map[string]*table.Table)}
 }
 
 // DeleteRec takes a table name and a record id and deletes
@@ -93,7 +98,7 @@ func (store *Store) ReadRec(tableName string, id int) ([]byte, error) {
 // TableExists takes a table name and returns a bool indicating
 // whether or not the table exists in the datastore.
 func (store *Store) TableExists(tableName string) bool {
-	_, ok := store.tableFiles[tableName]
+	_, ok := store.Tables[tableName]
 
 	return ok
 }
@@ -102,7 +107,7 @@ func (store *Store) TableExists(tableName string) bool {
 func (store *Store) TableNames() []string {
 	var names []string
 
-	for k := range store.tableFiles {
+	for k := range store.Tables {
 		names = append(names, k)
 	}
 
@@ -124,8 +129,8 @@ func (store *Store) UpdateRec(tableName string, id int, rec []byte) error {
 	return nil
 }
 
-func (store *Store) getTableFile(tableName string) (*Table, error) {
-	tableFile, ok := store.tableFiles[tableName]
+func (store *Store) GetTableFile(tableName string) (*table.Table, error) {
+	tableFile, ok := store.Tables[tableName]
 	if !ok {
 		return nil, dberr.ErrNoTable
 	}
@@ -133,8 +138,8 @@ func (store *Store) getTableFile(tableName string) (*Table, error) {
 	return tableFile, nil
 }
 
-func (store *Store) closeTable(tableName string) error {
-	tableFile, ok := store.tableFiles[tableName]
+func (store *Store) CloseTable(tableName string) error {
+	tableFile, ok := store.Tables[tableName]
 	if !ok {
 		return dberr.ErrNoTable
 	}

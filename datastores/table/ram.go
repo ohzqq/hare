@@ -2,6 +2,7 @@ package table
 
 import (
 	"github.com/dsnet/golib/memfile"
+	"github.com/ohzqq/hare/datastores/store"
 	"github.com/ohzqq/hare/dberr"
 )
 
@@ -18,14 +19,15 @@ func Mem(d []byte) *MemFile {
 func (m *MemFile) Close() error { return nil }
 
 type Ram struct {
-	path       string
-	ext        string
-	tableFiles map[string]*Table
+	path   string
+	ext    string
+	Tables map[string]*Table
+	*store.Store
 }
 
 func NewRam(tables map[string][]byte) (*Ram, error) {
 	ram := &Ram{
-		tableFiles: make(map[string]*Table),
+		Tables: make(map[string]*Table),
 	}
 
 	for tableName, data := range tables {
@@ -33,20 +35,20 @@ func NewRam(tables map[string][]byte) (*Ram, error) {
 		if err != nil {
 			return nil, err
 		}
-		ram.tableFiles[tableName] = tableFile
+		ram.Tables[tableName] = tableFile
 	}
 	return ram, nil
 }
 
 // Close closes the datastore.
 func (ram *Ram) Close() error {
-	for _, tableFile := range ram.tableFiles {
+	for _, tableFile := range ram.Tables {
 		if err := tableFile.Close(); err != nil {
 			return err
 		}
 	}
 
-	ram.tableFiles = nil
+	ram.Tables = nil
 
 	return nil
 }
@@ -63,7 +65,7 @@ func (ram *Ram) CreateTable(tableName string) error {
 	if err != nil {
 		return err
 	}
-	ram.tableFiles[tableName] = tableFile
+	ram.Tables[tableName] = tableFile
 
 	return nil
 }
@@ -71,7 +73,7 @@ func (ram *Ram) CreateTable(tableName string) error {
 // DeleteRec takes a table name and a record id and deletes
 // the associated record.
 func (ram *Ram) DeleteRec(tableName string, id int) error {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -86,7 +88,7 @@ func (ram *Ram) DeleteRec(tableName string, id int) error {
 // GetLastID takes a table name and returns the greatest record
 // id found in the table.
 func (ram *Ram) GetLastID(tableName string) (int, error) {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return 0, err
 	}
@@ -97,7 +99,7 @@ func (ram *Ram) GetLastID(tableName string) (int, error) {
 // IDs takes a table name and returns an array of all record IDs
 // found in the table.
 func (ram *Ram) IDs(tableName string) ([]int, error) {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +110,7 @@ func (ram *Ram) IDs(tableName string) ([]int, error) {
 // InsertRec takes a table name, a record id, and a byte array and adds
 // the record to the table.
 func (ram *Ram) InsertRec(tableName string, id int, rec []byte) error {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -137,7 +139,7 @@ func (ram *Ram) InsertRec(tableName string, id int, rec []byte) error {
 // ReadRec takes a table name and an id, reads the record from the
 // table, and returns a populated byte array.
 func (ram *Ram) ReadRec(tableName string, id int) ([]byte, error) {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -153,14 +155,14 @@ func (ram *Ram) ReadRec(tableName string, id int) ([]byte, error) {
 // RemoveTable takes a table name and deletes that table file from the
 // disk.
 func (ram *Ram) RemoveTable(tableName string) error {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
 
 	tableFile.Close()
 
-	delete(ram.tableFiles, tableName)
+	delete(ram.Tables, tableName)
 
 	return nil
 }
@@ -168,7 +170,7 @@ func (ram *Ram) RemoveTable(tableName string) error {
 // TableExists takes a table name and returns a bool indicating
 // whether or not the table exists in the datastore.
 func (ram *Ram) TableExists(tableName string) bool {
-	_, ok := ram.tableFiles[tableName]
+	_, ok := ram.Tables[tableName]
 
 	return ok
 }
@@ -177,7 +179,7 @@ func (ram *Ram) TableExists(tableName string) bool {
 func (ram *Ram) TableNames() []string {
 	var names []string
 
-	for k := range ram.tableFiles {
+	for k := range ram.Tables {
 		names = append(names, k)
 	}
 
@@ -187,7 +189,7 @@ func (ram *Ram) TableNames() []string {
 // UpdateRec takes a table name, a record id, and a byte array and updates
 // the table record with that id.
 func (ram *Ram) UpdateRec(tableName string, id int, rec []byte) error {
-	tableFile, err := ram.getTableFile(tableName)
+	tableFile, err := ram.GetTableFile(tableName)
 	if err != nil {
 		return err
 	}
@@ -199,8 +201,8 @@ func (ram *Ram) UpdateRec(tableName string, id int, rec []byte) error {
 	return nil
 }
 
-func (ram *Ram) getTableFile(tableName string) (*Table, error) {
-	tableFile, ok := ram.tableFiles[tableName]
+func (ram *Ram) GetTableFile(tableName string) (*Table, error) {
+	tableFile, ok := ram.Tables[tableName]
 	if !ok {
 		return nil, dberr.ErrNoTable
 	}
@@ -208,8 +210,8 @@ func (ram *Ram) getTableFile(tableName string) (*Table, error) {
 	return tableFile, nil
 }
 
-func (ram *Ram) closeTable(tableName string) error {
-	tableFile, ok := ram.tableFiles[tableName]
+func (ram *Ram) CloseTable(tableName string) error {
+	tableFile, ok := ram.Tables[tableName]
 	if !ok {
 		return dberr.ErrNoTable
 	}
