@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
 const dummyRune = 'X'
