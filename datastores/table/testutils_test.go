@@ -16,7 +16,7 @@ func runTestFns(t *testing.T, tests []func(t *testing.T)) {
 }
 
 func newTestDisk(t *testing.T) *Disk {
-	dsk, err := New("./testdata", ".json")
+	dsk, err := NewDisk("./testdata", ".json")
 	if err != nil {
 		t.Fatalf("newTestDisk error %v\n", err)
 	}
@@ -24,7 +24,7 @@ func newTestDisk(t *testing.T) *Disk {
 	return dsk
 }
 
-func newTestTableFile(t *testing.T) *tableFile {
+func newTestTableFile(t *testing.T) *Table {
 	filePtr, err := os.OpenFile("./testdata/contacts.json", os.O_RDWR, 0660)
 	if err != nil {
 		t.Fatalf("test new table open file error %v\n", err)
@@ -38,7 +38,7 @@ func newTestTableFile(t *testing.T) *tableFile {
 	return tf
 }
 
-func newTestTableMem(t *testing.T) *tableFile {
+func newTestTableMem(t *testing.T) *Table {
 	d, err := os.ReadFile("./testdata/contacts.json")
 	if err != nil {
 		t.Fatal(err)

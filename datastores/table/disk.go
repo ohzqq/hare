@@ -15,10 +15,10 @@ import (
 type Disk struct {
 	path       string
 	ext        string
-	tableFiles map[string]*tableFile
+	tableFiles map[string]*Table
 }
 
-func File(path, name, ext string) (TableIO, error) {
+func File(path, name, ext string) (TableFile, error) {
 	return OpenFile(path, name, ext)
 }
 
@@ -32,9 +32,9 @@ func OpenFile(path, tableName, ext string) (*os.File, error) {
 	return filePtr, nil
 }
 
-// New takes a datastorage path and an extension
+// NewDisk takes a datastorage path and an extension
 // and returns a pointer to a Disk struct.
-func New(path string, ext string) (*Disk, error) {
+func NewDisk(path string, ext string) (*Disk, error) {
 	var dsk Disk
 
 	dsk.path = path
@@ -282,7 +282,7 @@ func (dsk *Disk) compactFile(tableName string) error {
 	return nil
 }
 
-func (dsk *Disk) getTableFile(tableName string) (*tableFile, error) {
+func (dsk *Disk) getTableFile(tableName string) (*Table, error) {
 	tableFile, ok := dsk.tableFiles[tableName]
 	if !ok {
 		return nil, dberr.ErrNoTable
@@ -316,7 +316,7 @@ func (dsk *Disk) getTableNames() ([]string, error) {
 }
 
 func (dsk *Disk) init() error {
-	dsk.tableFiles = make(map[string]*tableFile)
+	dsk.tableFiles = make(map[string]*Table)
 
 	tableNames, err := dsk.getTableNames()
 	if err != nil {
