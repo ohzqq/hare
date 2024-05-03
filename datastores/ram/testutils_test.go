@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ohzqq/hare/datastores/table"
+	"github.com/ohzqq/hare/datastores/store"
 )
 
 func runTestFns(t *testing.T, tests []func(t *testing.T)) {
@@ -33,7 +33,7 @@ func newTestRam(t *testing.T) *Ram {
 	return ram
 }
 
-func newTestTableMem(t *testing.T) *table.Table {
+func newTestTableMem(t *testing.T) *store.Table {
 	d, err := os.ReadFile("./testdata/contacts.json")
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +41,7 @@ func newTestTableMem(t *testing.T) *table.Table {
 
 	mem := Mem(d)
 
-	tf, err := table.NewTable(mem)
+	tf, err := store.NewTable(mem)
 	if err != nil {
 		t.Fatal(err)
 	}
