@@ -18,7 +18,7 @@ func runTestFns(t *testing.T, tests []func(t *testing.T)) {
 }
 
 func newTestDisk(t *testing.T) *Disk {
-	dsk, err := NewDisk("./testdata", ".json")
+	dsk, err := New("./testdata", ".json")
 	if err != nil {
 		t.Fatalf("newTestDisk error %v\n", err)
 	}

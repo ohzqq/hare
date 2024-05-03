@@ -39,7 +39,7 @@ func newTestTableMem(t *testing.T) *store.Table {
 		t.Fatal(err)
 	}
 
-	mem := Mem(d)
+	mem := store.NewMemFile(d)
 
 	tf, err := store.NewTable(mem)
 	if err != nil {

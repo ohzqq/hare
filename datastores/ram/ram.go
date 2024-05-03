@@ -1,21 +1,8 @@
 package ram
 
 import (
-	"github.com/dsnet/golib/memfile"
 	"github.com/ohzqq/hare/datastores/store"
 )
-
-type MemFile struct {
-	*memfile.File
-}
-
-func Mem(d []byte) *MemFile {
-	return &MemFile{
-		File: memfile.New(d),
-	}
-}
-
-func (m *MemFile) Close() error { return nil }
 
 type Ram struct {
 	*store.Store
@@ -27,7 +14,7 @@ func New(tables map[string][]byte) (*Ram, error) {
 	}
 
 	for tableName, data := range tables {
-		err := ram.Store.CreateTable(tableName, Mem(data))
+		err := ram.Store.CreateTable(tableName, store.NewMemFile(data))
 		if err != nil {
 			return nil, err
 		}
@@ -36,5 +23,5 @@ func New(tables map[string][]byte) (*Ram, error) {
 }
 
 func (ram *Ram) CreateTable(tableName string) error {
-	return ram.Store.CreateTable(tableName, Mem([]byte{}))
+	return ram.Store.CreateTable(tableName, store.NewMemFile([]byte{}))
 }
