@@ -207,7 +207,3 @@ func (dsk *Disk) init() error {
 
 	return nil
 }
-
-func (dsk Disk) openFile(tableName string) (*os.File, error) {
-	return OpenFile(dsk.path, tableName, dsk.ext)
-}
