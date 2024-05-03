@@ -112,12 +112,40 @@ func (store *Store) ReadRec(tableName string, id int) ([]byte, error) {
 	return rec, err
 }
 
+// RemoveTable takes a table name and deletes that table file from the
+// disk.
+func (store *Store) RemoveTable(tableName string) error {
+	tableFile, err := store.GetTableFile(tableName)
+	if err != nil {
+		return err
+	}
+
+	tableFile.Close()
+
+	delete(store.Tables, tableName)
+
+	return nil
+}
+
 // TableExists takes a table name and returns a bool indicating
 // whether or not the table exists in the datastore.
 func (store *Store) TableExists(tableName string) bool {
 	_, ok := store.Tables[tableName]
 
 	return ok
+}
+
+// Close closes the datastore.
+func (store *Store) Close() error {
+	for _, tableFile := range store.Tables {
+		if err := tableFile.Close(); err != nil {
+			return err
+		}
+	}
+
+	store.Tables = nil
+
+	return nil
 }
 
 // TableNames returns an array of table names.
