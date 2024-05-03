@@ -39,13 +39,13 @@ func NewRam(tables map[string][]byte) (*Ram, error) {
 	return ram, nil
 }
 
-// dummiesTooShortError is a place to hold a custom error used
+// padTooShortError is a place to hold a custom error used
 // as part of a switch.
-type dummiesTooShortError struct {
+type padTooShortError struct {
 }
 
-func (e dummiesTooShortError) Error() string {
-	return "all dummy records are too short"
+func (e padTooShortError) Error() string {
+	return "all padded records are too short"
 }
 
 func PadRec(padLength int) []byte {
