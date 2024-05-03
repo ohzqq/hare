@@ -9,7 +9,7 @@ import (
 const hareTestDB = `testdata/hare`
 
 func TestNewTable(t *testing.T) {
-	f, err := File(hareTestDB, "index", ".json")
+	f, err := OpenFile(hareTestDB, "index", ".json")
 	if err != nil {
 		t.Error(err)
 	}

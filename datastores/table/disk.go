@@ -19,10 +19,6 @@ type Disk struct {
 	*store.Store
 }
 
-func File(path, name, ext string) (TableFile, error) {
-	return OpenFile(path, name, ext)
-}
-
 func OpenFile(path, tableName, ext string) (*os.File, error) {
 	p := filepath.Join(path, tableName+ext)
 	filePtr, err := os.OpenFile(p, os.O_CREATE|os.O_RDWR, 0660)
@@ -86,21 +82,6 @@ func (dsk *Disk) CreateTable(tableName string) error {
 	return nil
 }
 
-// DeleteRec takes a table name and a record id and deletes
-// the associated record.
-
-// GetLastID takes a table name and returns the greatest record
-// id found in the table.
-
-// IDs takes a table name and returns an array of all record IDs
-// found in the table.
-
-// InsertRec takes a table name, a record id, and a byte array and adds
-// the record to the table.
-
-// ReadRec takes a table name and an id, reads the record from the
-// table, and returns a populated byte array.
-
 // RemoveTable takes a table name and deletes that table file from the
 // disk.
 func (dsk *Disk) RemoveTable(tableName string) error {
@@ -119,14 +100,6 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 
 	return nil
 }
-
-// TableExists takes a table name and returns a bool indicating
-// whether or not the table exists in the datastore.
-
-// TableNames returns an array of table names.
-
-// UpdateRec takes a table name, a record id, and a byte array and updates
-// the table record with that id.
 
 // CompactTable takes a table name and compacts that table file on the
 // disk. (Taken from the example)
@@ -235,33 +208,6 @@ func (dsk *Disk) init() error {
 	return nil
 }
 
-func (dsk Disk) openFile(tableName string, createIfNeeded bool) (*os.File, error) {
-	var osFlag int
-
-	if createIfNeeded {
-		osFlag = os.O_CREATE | os.O_RDWR
-	} else {
-		osFlag = os.O_RDWR
-	}
-
-	p := filepath.Join(dsk.path, tableName+dsk.ext)
-	filePtr, err := os.OpenFile(p, osFlag, 0660)
-	if err != nil {
-		return nil, err
-	}
-
-	return filePtr, nil
-}
-
-func (dsk *Disk) CloseTable(tableName string) error {
-	tableFile, ok := dsk.Tables[tableName]
-	if !ok {
-		return dberr.ErrNoTable
-	}
-
-	if err := tableFile.Close(); err != nil {
-		return err
-	}
-
-	return nil
+func (dsk Disk) openFile(tableName string) (*os.File, error) {
+	return OpenFile(dsk.path, tableName, dsk.ext)
 }
