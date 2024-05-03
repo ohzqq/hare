@@ -1,4 +1,4 @@
-package table
+package disk
 
 import (
 	"bufio"
@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/ohzqq/hare/datastores/store"
 	"github.com/ohzqq/hare/dberr"
 )
 
@@ -25,7 +26,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 			want[3] = 160
 			want[4] = 224
 
-			got := tf.offsets
+			got := tf.Offsets
 
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v; got %v", want, got)
@@ -44,7 +45,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			got := tf.offsets
+			got := tf.Offsets
 
 			if nil != got {
 				t.Errorf("want %v; got %v", nil, got)
@@ -63,7 +64,7 @@ func TestDeleteRecTableFileTests(t *testing.T) {
 			tf := newTestTableFile(t)
 			defer tf.Close()
 
-			offset := tf.offsets[3]
+			offset := tf.Offsets[3]
 
 			err := tf.DeleteRec(3)
 			if err != nil {
@@ -72,9 +73,9 @@ func TestDeleteRecTableFileTests(t *testing.T) {
 
 			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
-			r := bufio.NewReader(tf.ptr)
+			r := bufio.NewReader(tf)
 
-			if _, err := tf.ptr.Seek(offset, 0); err != nil {
+			if _, err := tf.Seek(offset, 0); err != nil {
 				t.Fatal(err)
 			}
 
@@ -179,7 +180,7 @@ func TestOffsetsTableFileTests(t *testing.T) {
 				want    int
 				wanterr error
 			}{
-				{284, 0, dummiesTooShortError{}},
+				{284, 0, store.PaddingTooShortError{}},
 				{44, 56, nil},
 			}
 
@@ -204,7 +205,7 @@ func TestOverwriteRecTableFileTests(t *testing.T) {
 			tf := newTestTableFile(t)
 			defer tf.Close()
 
-			offset := tf.offsets[3]
+			offset := tf.Offsets[3]
 
 			err := tf.OverwriteRec(160, 64)
 			if err != nil {
@@ -213,9 +214,9 @@ func TestOverwriteRecTableFileTests(t *testing.T) {
 
 			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
-			r := bufio.NewReader(tf.ptr)
+			r := bufio.NewReader(tf)
 
-			if _, err := tf.ptr.Seek(offset, 0); err != nil {
+			if _, err := tf.Seek(offset, 0); err != nil {
 				t.Fatal(err)
 			}
 
@@ -273,7 +274,7 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 			}
 
 			wantOffset := int64(160)
-			gotOffset := tf.offsets[3]
+			gotOffset := tf.Offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
@@ -303,7 +304,7 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 			}
 
 			wantOffset := int64(284)
-			gotOffset := tf.offsets[3]
+			gotOffset := tf.Offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
@@ -332,7 +333,7 @@ func TestPadRecTableFileTests(t *testing.T) {
 			//padRec...
 
 			want := "\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-			got := string(PadRec(50))
+			got := string(store.PadRec(50))
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)

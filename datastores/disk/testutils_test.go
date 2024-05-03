@@ -1,10 +1,12 @@
-package table
+package disk
 
 import (
 	"os"
 	"os/exec"
 	"strconv"
 	"testing"
+
+	"github.com/ohzqq/hare/datastores/store"
 )
 
 func runTestFns(t *testing.T, tests []func(t *testing.T)) {
@@ -24,48 +26,17 @@ func newTestDisk(t *testing.T) *Disk {
 	return dsk
 }
 
-func newTestRam(t *testing.T) *Ram {
-	d, err := os.ReadFile("./testdata/contacts.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	tables := map[string][]byte{
-		"contacts": d,
-	}
-
-	ram, err := NewRam(tables)
-	if err != nil {
-		t.Fatalf("newTestRam error %v\n", err)
-	}
-	return ram
-}
-
-func newTestTableFile(t *testing.T) *Table {
+func newTestTableFile(t *testing.T) *store.Table {
 	filePtr, err := os.OpenFile("./testdata/contacts.json", os.O_RDWR, 0660)
 	if err != nil {
 		t.Fatalf("test new table open file error %v\n", err)
 	}
 
-	tf, err := NewTable(filePtr)
+	tf, err := store.NewTable(filePtr)
 	if err != nil {
 		t.Fatalf("newTestTableFile new table error %v\n", err)
 	}
 
-	return tf
-}
-
-func newTestTableMem(t *testing.T) *Table {
-	d, err := os.ReadFile("./testdata/contacts.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mem := Mem(d)
-
-	tf, err := NewTable(mem)
-	if err != nil {
-		t.Fatal(err)
-	}
 	return tf
 }
 
