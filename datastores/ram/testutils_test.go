@@ -1,44 +1,73 @@
 package ram
 
 import (
+	"os"
+	"os/exec"
 	"strconv"
 	"testing"
+
+	"github.com/ohzqq/hare/datastores/table"
 )
 
 func runTestFns(t *testing.T, tests []func(t *testing.T)) {
 	for i, fn := range tests {
+		testSetup(t)
 		t.Run(strconv.Itoa(i), fn)
+		testTeardown(t)
 	}
 }
 
 func newTestRam(t *testing.T) *Ram {
-	s := make(map[string]map[int]string)
-	s["contacts"] = seedData()
+	d, err := os.ReadFile("./testdata/contacts.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables := map[string][]byte{
+		"contacts": d,
+	}
 
-	ram, err := New(s)
+	ram, err := NewRam(tables)
+	if err != nil {
+		t.Fatalf("newTestRam error %v\n", err)
+	}
+	return ram
+}
+
+func newTestTableMem(t *testing.T) *table.Table {
+	d, err := os.ReadFile("./testdata/contacts.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return ram
-}
+	mem := Mem(d)
 
-func newTestTable(t *testing.T) *table {
-	tbl := newTable()
-
-	for k, v := range seedData() {
-		tbl.records[k] = []byte(v)
+	tf, err := table.NewTable(mem)
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	return tbl
+	return tf
 }
 
-func seedData() map[int]string {
-	s := make(map[int]string)
-	s[1] = `{"id":1,"first_name":"John","last_name":"Doe","age":37}`
-	s[2] = `{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}`
-	s[3] = `{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}`
-	s[4] = `{"id":4,"first_name":"Helen","last_name":"Keller","age":25}`
+func testSetup(t *testing.T) {
+	testRemoveFiles(t)
 
-	return s
+	cmd := exec.Command("cp", "./testdata/contacts.bak", "./testdata/contacts.json")
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("test cp error %v\n", err)
+	}
+}
+
+func testTeardown(t *testing.T) {
+	testRemoveFiles(t)
+}
+
+func testRemoveFiles(t *testing.T) {
+	filesToRemove := []string{"contacts.json", "newtable.json"}
+
+	for _, f := range filesToRemove {
+		err := os.Remove("./testdata/" + f)
+		if err != nil && !os.IsNotExist(err) {
+			t.Fatalf("test rm files error %v\n", err)
+		}
+	}
 }

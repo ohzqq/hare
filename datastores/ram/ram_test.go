@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
 func TestNewCloseRamTests(t *testing.T) {
@@ -14,35 +14,35 @@ func TestNewCloseRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//New...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			want := make(map[int][]byte)
-			want[1] = []byte(`{"id":1,"first_name":"John","last_name":"Doe","age":37}`)
-			want[2] = []byte(`{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}`)
-			want[3] = []byte(`{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}`)
-			want[4] = []byte(`{"id":4,"first_name":"Helen","last_name":"Keller","age":25}`)
+			wantOffsets := make(map[int]int64)
+			wantOffsets[1] = 0
+			wantOffsets[2] = 101
+			wantOffsets[3] = 160
+			wantOffsets[4] = 224
 
-			got := ram.tables["contacts"].records
+			gotOffsets := dsk.Tables["contacts"].Offsets
 
-			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %v; got %v", want, got)
+			if !reflect.DeepEqual(wantOffsets, gotOffsets) {
+				t.Errorf("want %v; got %v", wantOffsets, gotOffsets)
 			}
 		},
 		func(t *testing.T) {
 			//Close...
 
-			ram := newTestRam(t)
-			ram.Close()
+			dsk := newTestRam(t)
+			dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			_, gotErr := ram.ReadRec("contacts", 3)
+			_, gotErr := dsk.ReadRec("contacts", 3)
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			got := ram.tables
+			got := dsk.Tables
 
 			if nil != got {
 				t.Errorf("want %v; got %v", nil, got)
@@ -58,16 +58,16 @@ func TestCreateTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//CreateTable...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			err := ram.CreateTable("newtable")
+			err := dsk.CreateTable("newtable", Mem([]byte{}))
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			want := true
-			got := ram.TableExists("newtable")
+			got := dsk.TableExists("newtable")
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
@@ -76,11 +76,11 @@ func TestCreateTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//CreateTable (TableExists error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrTableExists
-			gotErr := ram.CreateTable("contacts")
+			gotErr := dsk.CreateTable("contacts", Mem([]byte{}))
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -96,16 +96,16 @@ func TestDeleteRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//DeleteRec...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			err := ram.DeleteRec("contacts", 3)
+			err := dsk.DeleteRec("contacts", 3)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			want := dberr.ErrNoRecord
-			_, got := ram.ReadRec("contacts", 3)
+			_, got := dsk.ReadRec("contacts", 3)
 
 			if !errors.Is(got, want) {
 				t.Errorf("want %v; got %v", want, got)
@@ -114,11 +114,11 @@ func TestDeleteRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//DeleteRec (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := ram.DeleteRec("nonexistent", 3)
+			gotErr := dsk.DeleteRec("nonexistent", 3)
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -134,11 +134,11 @@ func TestGetLastIDRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//GetLastID...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			want := 4
-			got, err := ram.GetLastID("contacts")
+			got, err := dsk.GetLastID("contacts")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -150,11 +150,11 @@ func TestGetLastIDRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//GetLastID (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			_, gotErr := ram.GetLastID("nonexistent")
+			_, gotErr := dsk.GetLastID("nonexistent")
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -170,11 +170,11 @@ func TestIDsRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//IDs...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			want := []int{1, 2, 3, 4}
-			got, err := ram.IDs("contacts")
+			got, err := dsk.IDs("contacts")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -195,11 +195,11 @@ func TestIDsRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//IDs (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			_, gotErr := ram.IDs("nonexistent")
+			_, gotErr := dsk.IDs("nonexistent")
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -215,20 +215,20 @@ func TestInsertRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//InsertRec...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			err := ram.InsertRec("contacts", 5, []byte(`{"id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
+			err := dsk.InsertRec("contacts", 5, []byte(`{"id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			rec, err := ram.ReadRec("contacts", 5)
+			rec, err := dsk.ReadRec("contacts", 5)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			want := `{"id":5,"first_name":"Rex","last_name":"Stout","age":77}`
+			want := "{\"id\":5,\"first_name\":\"Rex\",\"last_name\":\"Stout\",\"age\":77}\n"
 			got := string(rec)
 
 			if want != got {
@@ -238,11 +238,11 @@ func TestInsertRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//InsertRec (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := ram.InsertRec("nonexistent", 5, []byte(`{"id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
+			gotErr := dsk.InsertRec("nonexistent", 5, []byte(`{"id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -251,21 +251,21 @@ func TestInsertRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//InsertRec (IDExists error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrIDExists
-			gotErr := ram.InsertRec("contacts", 3, []byte(`{"id":3,"first_name":"Rex","last_name":"Stout","age":77}`))
+			gotErr := dsk.InsertRec("contacts", 3, []byte(`{"id":3,"first_name":"Rex","last_name":"Stout","age":77}`))
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			rec, err := ram.ReadRec("contacts", 3)
+			rec, err := dsk.ReadRec("contacts", 3)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			want := `{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}`
+			want := "{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -277,20 +277,20 @@ func TestInsertRecRamTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestRecRecRamTests(t *testing.T) {
+func TestReadRecRamTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//ReadRec...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			rec, err := ram.ReadRec("contacts", 3)
+			rec, err := dsk.ReadRec("contacts", 3)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			want := `{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}`
+			want := "{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -300,11 +300,11 @@ func TestRecRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//ReadRec (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			_, gotErr := ram.ReadRec("nonexistent", 3)
+			_, gotErr := dsk.ReadRec("nonexistent", 3)
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -320,16 +320,16 @@ func TestRemoveTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//RemoveTable...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			err := ram.RemoveTable("contacts")
+			err := dsk.RemoveTable("contacts")
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			want := false
-			got := ram.TableExists("contacts")
+			got := dsk.TableExists("contacts")
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
@@ -338,11 +338,11 @@ func TestRemoveTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//RemoveTable (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := ram.RemoveTable("nonexistent")
+			gotErr := dsk.RemoveTable("nonexistent")
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -358,18 +358,18 @@ func TestTableExistsRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//TableExists...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			want := true
-			got := ram.TableExists("contacts")
+			got := dsk.TableExists("contacts")
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
 			}
 
 			want = false
-			got = ram.TableExists("nonexistant")
+			got = dsk.TableExists("nonexistant")
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
@@ -385,11 +385,11 @@ func TestTableNamesRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//TableNames...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			want := []string{"contacts"}
-			got := ram.TableNames()
+			got := dsk.TableNames()
 
 			sort.Strings(got)
 
@@ -414,20 +414,20 @@ func TestUpdateRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//UpdateRec...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
-			err := ram.UpdateRec("contacts", 3, []byte(`{"id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
+			err := dsk.UpdateRec("contacts", 3, []byte(`{"id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			rec, err := ram.ReadRec("contacts", 3)
+			rec, err := dsk.ReadRec("contacts", 3)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			want := `{"id":3,"first_name":"William","last_name":"Shakespeare","age":77}`
+			want := "{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":77}\n"
 			got := string(rec)
 
 			if want != got {
@@ -437,11 +437,42 @@ func TestUpdateRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//UpdateRec (NoTable error)...
 
-			ram := newTestRam(t)
-			defer ram.Close()
+			dsk := newTestRam(t)
+			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := ram.UpdateRec("nonexistent", 3, []byte(`{"id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
+			gotErr := dsk.UpdateRec("nonexistent", 3, []byte(`{"id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
+
+			if !errors.Is(gotErr, wantErr) {
+				t.Errorf("want %v; got %v", wantErr, gotErr)
+			}
+		},
+	}
+
+	runTestFns(t, tests)
+}
+
+func TestCloseTableRamTests(t *testing.T) {
+	var tests = []func(t *testing.T){
+		func(t *testing.T) {
+			//closeTable...
+
+			dsk := newTestRam(t)
+			defer dsk.Close()
+
+			err := dsk.CloseTable("contacts")
+			if err != nil {
+				t.Errorf("want %v; got %v", nil, err)
+			}
+		},
+		func(t *testing.T) {
+			//closeTable (NoTable error)...
+
+			dsk := newTestRam(t)
+			defer dsk.Close()
+
+			wantErr := dberr.ErrNoTable
+			gotErr := dsk.CloseTable("nonexistent")
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
