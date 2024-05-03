@@ -18,8 +18,6 @@ func Mem(d []byte) *MemFile {
 func (m *MemFile) Close() error { return nil }
 
 type Ram struct {
-	path string
-	ext  string
 	*store.Store
 }
 

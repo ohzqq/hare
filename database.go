@@ -17,12 +17,6 @@ type Record interface {
 	AfterFind(*Database) error
 }
 
-type DataStore interface {
-	Close() error
-	CreateTable(string) error
-	RemoveTable(string) error
-}
-
 type datastorage interface {
 	Close() error
 	CreateTable(string) error
