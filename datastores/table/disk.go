@@ -48,15 +48,13 @@ func NewDisk(path string, ext string) (*Disk, error) {
 
 // Close closes the datastore.
 func (dsk *Disk) Close() error {
-	for _, tableFile := range dsk.Tables {
-		if err := tableFile.Close(); err != nil {
-			return err
-		}
+	err := dsk.Store.Close()
+	if err != nil {
+		return err
 	}
 
 	dsk.path = ""
 	dsk.ext = ""
-	dsk.Tables = nil
 
 	return nil
 }
