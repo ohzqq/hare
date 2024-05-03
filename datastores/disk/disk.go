@@ -19,19 +19,9 @@ type Disk struct {
 	*store.Store
 }
 
-func OpenFile(path, tableName, ext string) (*os.File, error) {
-	p := filepath.Join(path, tableName+ext)
-	filePtr, err := os.OpenFile(p, os.O_CREATE|os.O_RDWR, 0660)
-	if err != nil {
-		return nil, err
-	}
-
-	return filePtr, nil
-}
-
-// NewDisk takes a datastorage path and an extension
+// New takes a datastorage path and an extension
 // and returns a pointer to a Disk struct.
-func NewDisk(path string, ext string) (*Disk, error) {
+func New(path string, ext string) (*Disk, error) {
 	dsk := &Disk{
 		Store: store.New(),
 	}
@@ -44,6 +34,16 @@ func NewDisk(path string, ext string) (*Disk, error) {
 	}
 
 	return dsk, nil
+}
+
+func OpenFile(path, tableName, ext string) (*os.File, error) {
+	p := filepath.Join(path, tableName+ext)
+	filePtr, err := os.OpenFile(p, os.O_CREATE|os.O_RDWR, 0660)
+	if err != nil {
+		return nil, err
+	}
+
+	return filePtr, nil
 }
 
 // Close closes the datastore.

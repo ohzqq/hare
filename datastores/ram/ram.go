@@ -23,7 +23,7 @@ type Ram struct {
 	*store.Store
 }
 
-func NewRam(tables map[string][]byte) (*Ram, error) {
+func New(tables map[string][]byte) (*Ram, error) {
 	ram := &Ram{
 		Store: store.New(),
 	}

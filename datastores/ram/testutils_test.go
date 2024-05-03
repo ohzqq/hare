@@ -26,7 +26,7 @@ func newTestRam(t *testing.T) *Ram {
 		"contacts": d,
 	}
 
-	ram, err := NewRam(tables)
+	ram, err := New(tables)
 	if err != nil {
 		t.Fatalf("newTestRam error %v\n", err)
 	}
