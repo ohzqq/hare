@@ -62,12 +62,6 @@ func (ram *Ram) CreateTable(tableName string) error {
 	return nil
 }
 
-// InsertRec takes a table name, a record id, and a byte array and adds
-// the record to the table.
-
-// ReadRec takes a table name and an id, reads the record from the
-// table, and returns a populated byte array.
-
 // RemoveTable takes a table name and deletes that table file from the
 // disk.
 func (ram *Ram) RemoveTable(tableName string) error {
@@ -82,11 +76,3 @@ func (ram *Ram) RemoveTable(tableName string) error {
 
 	return nil
 }
-
-// TableExists takes a table name and returns a bool indicating
-// whether or not the table exists in the datastore.
-
-// TableNames returns an array of table names.
-
-// UpdateRec takes a table name, a record id, and a byte array and updates
-// the table record with that id.

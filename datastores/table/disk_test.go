@@ -36,7 +36,7 @@ func TestNewCloseDiskTests(t *testing.T) {
 			wantOffsets[3] = 160
 			wantOffsets[4] = 224
 
-			gotOffsets := dsk.Tables["contacts"].offsets
+			gotOffsets := dsk.Tables["contacts"].Offsets
 
 			if !reflect.DeepEqual(wantOffsets, gotOffsets) {
 				t.Errorf("want %v; got %v", wantOffsets, gotOffsets)
@@ -490,7 +490,7 @@ func TestCompactTableTests(t *testing.T) {
 			}
 
 			want := 4
-			got := len(tableFile.offsets)
+			got := len(tableFile.Offsets)
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
