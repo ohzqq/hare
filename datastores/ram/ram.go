@@ -5,6 +5,8 @@ import (
 	"github.com/ohzqq/hare/datastores/store"
 )
 
+const dummyRune = 'X'
+
 type MemFile struct {
 	*memfile.File
 }
@@ -35,4 +37,25 @@ func NewRam(tables map[string][]byte) (*Ram, error) {
 		}
 	}
 	return ram, nil
+}
+
+// dummiesTooShortError is a place to hold a custom error used
+// as part of a switch.
+type dummiesTooShortError struct {
+}
+
+func (e dummiesTooShortError) Error() string {
+	return "all dummy records are too short"
+}
+
+func PadRec(padLength int) []byte {
+	extraData := make([]byte, padLength)
+
+	extraData[0] = '\n'
+
+	for i := 1; i < padLength; i++ {
+		extraData[i] = dummyRune
+	}
+
+	return extraData
 }
