@@ -53,14 +53,14 @@ func (ram *Ram) Close() error {
 // CreateTable takes a table name, creates a new disk
 // file, and adds it to the map of tables in the
 // datastore.
-func (ram *Ram) CreateTable(tableName string) error {
-	err := ram.Store.CreateTable(tableName, Mem([]byte{}))
-	if err != nil {
-		return err
-	}
+//func (ram *Ram) CreateTable(tableName string) error {
+//  err := ram.Store.CreateTable(tableName, Mem([]byte{}))
+//  if err != nil {
+//    return err
+//  }
 
-	return nil
-}
+//  return nil
+//}
 
 // RemoveTable takes a table name and deletes that table file from the
 // disk.

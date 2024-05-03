@@ -61,7 +61,7 @@ func TestCreateTableRamTests(t *testing.T) {
 			dsk := newTestRam(t)
 			defer dsk.Close()
 
-			err := dsk.CreateTable("newtable")
+			err := dsk.CreateTable("newtable", Mem([]byte{}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -80,7 +80,7 @@ func TestCreateTableRamTests(t *testing.T) {
 			defer dsk.Close()
 
 			wantErr := dberr.ErrTableExists
-			gotErr := dsk.CreateTable("contacts")
+			gotErr := dsk.CreateTable("contacts", Mem([]byte{}))
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
