@@ -1,4 +1,4 @@
-package ram
+package net
 
 import (
 	"os"
@@ -17,16 +17,13 @@ func runTestFns(t *testing.T, tests []func(t *testing.T)) {
 	}
 }
 
-func newTestRam(t *testing.T) *Ram {
+func newTestRam(t *testing.T) *Net {
 	d, err := os.ReadFile("./testdata/contacts.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	tables := map[string][]byte{
-		"contacts": d,
-	}
 
-	ram, err := New(tables)
+	ram, err := New("contacts", d)
 	if err != nil {
 		t.Fatalf("newTestRam error %v\n", err)
 	}

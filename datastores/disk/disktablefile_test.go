@@ -8,7 +8,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/datastores/store"
+	"github.com/ohzqq/hare/dberr"
 )
 
 func TestNewCloseTableFileTests(t *testing.T) {
@@ -17,7 +18,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 			//New...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
 			want := make(map[int]int64)
 			want[1] = 0
@@ -25,7 +26,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 			want[3] = 160
 			want[4] = 224
 
-			got := tf.offsets
+			got := tf.Offsets
 
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v; got %v", want, got)
@@ -35,16 +36,16 @@ func TestNewCloseTableFileTests(t *testing.T) {
 			//close...
 
 			tf := newTestTableFile(t)
-			tf.close()
+			tf.Close()
 
 			wantErr := dberr.ErrNoRecord
-			_, gotErr := tf.readRec(3)
+			_, gotErr := tf.ReadRec(3)
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			got := tf.offsets
+			got := tf.Offsets
 
 			if nil != got {
 				t.Errorf("want %v; got %v", nil, got)
@@ -61,20 +62,20 @@ func TestDeleteRecTableFileTests(t *testing.T) {
 			//deleteRec...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
-			offset := tf.offsets[3]
+			offset := tf.Offsets[3]
 
-			err := tf.deleteRec(3)
+			err := tf.DeleteRec(3)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
-			r := bufio.NewReader(tf.ptr)
+			r := bufio.NewReader(tf)
 
-			if _, err := tf.ptr.Seek(offset, 0); err != nil {
+			if _, err := tf.Seek(offset, 0); err != nil {
 				t.Fatal(err)
 			}
 
@@ -99,10 +100,10 @@ func TestGetLastIDTableFileTests(t *testing.T) {
 			//getLastID...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
 			want := 4
-			got := tf.getLastID()
+			got := tf.GetLastID()
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
@@ -119,10 +120,10 @@ func TestIDsTableFileTests(t *testing.T) {
 			//ids...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
 			want := []int{1, 2, 3, 4}
-			got := tf.ids()
+			got := tf.IDs()
 			sort.Ints(got)
 
 			if len(want) != len(got) {
@@ -147,7 +148,7 @@ func TestOffsetsTableFileTests(t *testing.T) {
 			//offsetForWritingRec...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
 			tests := []struct {
 				recLen int
@@ -159,7 +160,7 @@ func TestOffsetsTableFileTests(t *testing.T) {
 
 			for _, tt := range tests {
 				want := int64(tt.want)
-				got, err := tf.offsetForWritingRec(tt.recLen)
+				got, err := tf.OffsetForWritingRec(tt.recLen)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -172,20 +173,20 @@ func TestOffsetsTableFileTests(t *testing.T) {
 			//offsetToFitRec...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
 			tests := []struct {
 				recLen  int
 				want    int
 				wanterr error
 			}{
-				{284, 0, dummiesTooShortError{}},
+				{284, 0, store.PaddingTooShortError{}},
 				{44, 56, nil},
 			}
 
 			for _, tt := range tests {
 				want := int64(tt.want)
-				got, goterr := tf.offsetToFitRec(tt.recLen)
+				got, goterr := tf.OffsetToFitRec(tt.recLen)
 				if !((want == got) && (errors.Is(goterr, tt.wanterr))) {
 					t.Errorf("want %v; wanterr %v; got %v; goterr %v", want, tt.wanterr, got, goterr)
 				}
@@ -202,20 +203,20 @@ func TestOverwriteRecTableFileTests(t *testing.T) {
 			//overwriteRec...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
-			offset := tf.offsets[3]
+			offset := tf.Offsets[3]
 
-			err := tf.overwriteRec(160, 64)
+			err := tf.OverwriteRec(160, 64)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
-			r := bufio.NewReader(tf.ptr)
+			r := bufio.NewReader(tf)
 
-			if _, err := tf.ptr.Seek(offset, 0); err != nil {
+			if _, err := tf.Seek(offset, 0); err != nil {
 				t.Fatal(err)
 			}
 
@@ -240,9 +241,9 @@ func TestReadRecTableFileTests(t *testing.T) {
 			//readRec...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
-			rec, err := tf.readRec(3)
+			rec, err := tf.ReadRec(3)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -265,21 +266,21 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 			//updateRec (fits on same line)...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
-			err := tf.updateRec(3, []byte("{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
+			err := tf.UpdateRec(3, []byte("{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			wantOffset := int64(160)
-			gotOffset := tf.offsets[3]
+			gotOffset := tf.Offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
 			}
 
-			rec, err := tf.readRec(3)
+			rec, err := tf.ReadRec(3)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -295,21 +296,21 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 			//updateRec (does not fit on same line)...
 
 			tf := newTestTableFile(t)
-			defer tf.close()
+			defer tf.Close()
 
-			err := tf.updateRec(3, []byte("{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
+			err := tf.UpdateRec(3, []byte("{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			wantOffset := int64(284)
-			gotOffset := tf.offsets[3]
+			gotOffset := tf.Offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
 			}
 
-			rec, err := tf.readRec(3)
+			rec, err := tf.ReadRec(3)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -332,7 +333,7 @@ func TestPadRecTableFileTests(t *testing.T) {
 			//padRec...
 
 			want := "\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-			got := string(padRec(50))
+			got := string(store.PadRec(50))
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)

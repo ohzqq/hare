@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jameycribbs/hare/datastores/disk"
-	"github.com/jameycribbs/hare/datastores/ram"
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/datastores/disk"
+	"github.com/ohzqq/hare/datastores/ram"
+	"github.com/ohzqq/hare/dberr"
 )
 
 func TestCloseDatabaseTests(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jameycribbs/hare/datastores/disk"
-	"github.com/jameycribbs/hare/datastores/ram"
+	"github.com/ohzqq/hare/datastores/disk"
+	"github.com/ohzqq/hare/datastores/ram"
 )
 
 type Contact struct {
@@ -62,11 +62,35 @@ func runTestFns(t *testing.T, testFns []func(*Database) func(*testing.T)) {
 			t.Fatal(err)
 		}
 		defer ramDB.Close()
-
 		t.Run(fmt.Sprintf("ram/%s", tstNum), fn(ramDB))
+
+		memDS := newTestRam(t)
+		memDB, err := New(memDS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer memDB.Close()
+
+		t.Run(fmt.Sprintf("table/%s", tstNum), fn(memDB))
 
 		testTeardown(t)
 	}
+}
+
+func newTestRam(t *testing.T) *ram.Ram {
+	d, err := os.ReadFile("./testdata/contacts.bak")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables := map[string][]byte{
+		"contacts": d,
+	}
+
+	ram, err := ram.New(tables)
+	if err != nil {
+		t.Fatalf("newTestRam error %v\n", err)
+	}
+	return ram
 }
 
 func checkErr(t *testing.T, wantErr error, gotErr error) {
@@ -99,16 +123,14 @@ func testRemoveFiles(t *testing.T) {
 	}
 }
 
-func seedData() map[string]map[int]string {
-	tblMap := make(map[string]map[int]string)
-	contactsMap := make(map[int]string)
+func seedData() map[string][]byte {
+	contacts := []byte(`{"id":1,"first_name":"John","last_name":"Doe","age":37}
+{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}
+{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}
+{"id":4,"first_name":"Helen","last_name":"Keller","age":25}
+`)
 
-	contactsMap[1] = `{"id":1,"first_name":"John","last_name":"Doe","age":37}`
-	contactsMap[2] = `{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}`
-	contactsMap[3] = `{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}`
-	contactsMap[4] = `{"id":4,"first_name":"Helen","last_name":"Keller","age":25}`
-
-	tblMap["contacts"] = contactsMap
-
-	return tblMap
+	return map[string][]byte{
+		"contacts": contacts,
+	}
 }

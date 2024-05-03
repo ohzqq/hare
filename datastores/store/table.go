@@ -1,31 +1,35 @@
-package disk
+package store
 
 import (
 	"bufio"
 	"encoding/json"
 	"io"
-	"os"
 
-	"github.com/jameycribbs/hare/dberr"
+	"github.com/ohzqq/hare/dberr"
 )
 
-const dummyRune = 'X'
+const PaddingRune = 'X'
 
-type tableFile struct {
-	ptr     *os.File
-	offsets map[int]int64
+type Table struct {
+	TableFile
+	Offsets map[int]int64
 }
 
-func newTableFile(tableName string, filePtr *os.File) (*tableFile, error) {
+type TableFile interface {
+	io.ReadWriteCloser
+	io.Seeker
+}
+
+func NewTable(filePtr TableFile) (*Table, error) {
 	var currentOffset int64
 	var totalOffset int64
 	var recLen int
 	var recMap map[string]interface{}
 
-	tableFile := tableFile{
-		ptr: filePtr,
+	tableFile := Table{
+		TableFile: filePtr,
 	}
-	tableFile.offsets = make(map[int]int64)
+	tableFile.Offsets = make(map[int]int64)
 
 	r := bufio.NewReader(filePtr)
 
@@ -50,7 +54,7 @@ func newTableFile(tableName string, filePtr *os.File) (*tableFile, error) {
 		}
 
 		// Skip dummy records.
-		if (rec[0] == '\n') || (rec[0] == dummyRune) {
+		if (rec[0] == '\n') || (rec[0] == PaddingRune) {
 			continue
 		}
 
@@ -60,46 +64,46 @@ func newTableFile(tableName string, filePtr *os.File) (*tableFile, error) {
 		}
 		recMapID := int(recMap["id"].(float64))
 
-		tableFile.offsets[recMapID] = currentOffset
+		tableFile.Offsets[recMapID] = currentOffset
 	}
 
 	return &tableFile, nil
 }
 
-func (t *tableFile) close() error {
-	if err := t.ptr.Close(); err != nil {
+func (t *Table) Close() error {
+	if err := t.TableFile.Close(); err != nil {
 		return err
 	}
 
-	t.offsets = nil
+	t.Offsets = nil
 
 	return nil
 }
 
-func (t *tableFile) deleteRec(id int) error {
-	offset, ok := t.offsets[id]
+func (t *Table) DeleteRec(id int) error {
+	offset, ok := t.Offsets[id]
 	if !ok {
 		return dberr.ErrNoRecord
 	}
 
-	rec, err := t.readRec(id)
+	rec, err := t.ReadRec(id)
 	if err != nil {
 		return err
 	}
 
-	if err = t.overwriteRec(offset, len(rec)); err != nil {
+	if err = t.OverwriteRec(offset, len(rec)); err != nil {
 		return err
 	}
 
-	delete(t.offsets, id)
+	delete(t.Offsets, id)
 
 	return nil
 }
 
-func (t *tableFile) getLastID() int {
+func (t *Table) GetLastID() int {
 	var lastID int
 
-	for k := range t.offsets {
+	for k := range t.Offsets {
 		if k > lastID {
 			lastID = k
 		}
@@ -108,11 +112,11 @@ func (t *tableFile) getLastID() int {
 	return lastID
 }
 
-func (t *tableFile) ids() []int {
-	ids := make([]int, len(t.offsets))
+func (t *Table) IDs() []int {
+	ids := make([]int, len(t.Offsets))
 
 	i := 0
-	for id := range t.offsets {
+	for id := range t.Offsets {
 		ids[i] = id
 		i++
 	}
@@ -120,21 +124,21 @@ func (t *tableFile) ids() []int {
 	return ids
 }
 
-// offsetForWritingRec takes a record length and returns the offset in the file
+// OffsetForWritingRec takes a record length and returns the offset in the file
 // where the record is to be written.  It will try to fit the record on a dummy
 // line, otherwise, it will return the offset at the end of the file.
-func (t *tableFile) offsetForWritingRec(recLen int) (int64, error) {
+func (t *Table) OffsetForWritingRec(recLen int) (int64, error) {
 	var offset int64
 	var err error
 
 	// Can the record fit onto a line with a dummy record?
-	offset, recFitErr := t.offsetToFitRec(recLen)
+	offset, recFitErr := t.OffsetToFitRec(recLen)
 
 	switch recFitErr.(type) {
 	case nil:
-	case dummiesTooShortError:
+	case PaddingTooShortError:
 		// Go to the end of the file.
-		offset, err = t.ptr.Seek(0, 2)
+		offset, err = t.TableFile.Seek(0, 2)
 		if err != nil {
 			return 0, err
 		}
@@ -145,16 +149,16 @@ func (t *tableFile) offsetForWritingRec(recLen int) (int64, error) {
 	return offset, nil
 }
 
-// offsetToFitRec takes a record length and checks all the dummy records to see
+// OffsetToFitRec takes a record length and checks all the dummy records to see
 // if any are big enough to fit the record.
-func (t *tableFile) offsetToFitRec(recLenNeeded int) (int64, error) {
+func (t *Table) OffsetToFitRec(recLenNeeded int) (int64, error) {
 	var recLen int
 	var offset int64
 	var totalOffset int64
 
-	r := bufio.NewReader(t.ptr)
+	r := bufio.NewReader(t.TableFile)
 
-	if _, err := t.ptr.Seek(0, 0); err != nil {
+	if _, err := t.TableFile.Seek(0, 0); err != nil {
 		return 0, err
 	}
 
@@ -178,17 +182,17 @@ func (t *tableFile) offsetToFitRec(recLenNeeded int) (int64, error) {
 
 		// If this is a dummy record, is it big enough to
 		// hold the needed record length?
-		if (rec[0] == '\n') || (rec[0] == dummyRune) {
+		if (rec[0] == '\n') || (rec[0] == PaddingRune) {
 			if recLen >= recLenNeeded {
 				return offset, nil
 			}
 		}
 	}
 
-	return 0, dummiesTooShortError{}
+	return 0, PaddingTooShortError{}
 }
 
-func (t *tableFile) overwriteRec(offset int64, recLen int) error {
+func (t *Table) OverwriteRec(offset int64, recLen int) error {
 	// Overwrite record with XXXXXXXX...
 	dummyData := make([]byte, recLen-1)
 
@@ -196,22 +200,22 @@ func (t *tableFile) overwriteRec(offset int64, recLen int) error {
 		dummyData[i] = 'X'
 	}
 
-	if err := t.writeRec(offset, 0, dummyData); err != nil {
+	if err := t.WriteRec(offset, 0, dummyData); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (t *tableFile) readRec(id int) ([]byte, error) {
-	offset, ok := t.offsets[id]
+func (t *Table) ReadRec(id int) ([]byte, error) {
+	offset, ok := t.Offsets[id]
 	if !ok {
 		return nil, dberr.ErrNoRecord
 	}
 
-	r := bufio.NewReader(t.ptr)
+	r := bufio.NewReader(t.TableFile)
 
-	if _, err := t.ptr.Seek(offset, 0); err != nil {
+	if _, err := t.TableFile.Seek(offset, 0); err != nil {
 		return nil, err
 	}
 
@@ -223,15 +227,15 @@ func (t *tableFile) readRec(id int) ([]byte, error) {
 	return rec, err
 }
 
-func (t *tableFile) updateRec(id int, rec []byte) error {
+func (t *Table) UpdateRec(id int, rec []byte) error {
 	recLen := len(rec)
 
-	oldRecOffset, ok := t.offsets[id]
+	oldRecOffset, ok := t.Offsets[id]
 	if !ok {
 		return dberr.ErrNoRecord
 	}
 
-	oldRec, err := t.readRec(id)
+	oldRec, err := t.ReadRec(id)
 	if err != nil {
 		return err
 	}
@@ -244,35 +248,35 @@ func (t *tableFile) updateRec(id int, rec []byte) error {
 		// Changed record is smaller than record in table, so dummy out
 		// extra space and write over old record.
 
-		rec = append(rec, padRec(diff)...)
+		rec = append(rec, PadRec(diff)...)
 
-		if err = t.writeRec(oldRecOffset, 0, rec); err != nil {
+		if err = t.WriteRec(oldRecOffset, 0, rec); err != nil {
 			return err
 		}
 
 	} else if diff < 0 {
 		// Changed record is larger than the record in table.
 
-		recOffset, err := t.offsetForWritingRec(recLen)
+		recOffset, err := t.OffsetForWritingRec(recLen)
 		if err != nil {
 			return err
 		}
 
-		if err = t.writeRec(recOffset, 0, rec); err != nil {
+		if err = t.WriteRec(recOffset, 0, rec); err != nil {
 			return err
 		}
 
 		// Turn the old record into a dummy.
-		if err = t.overwriteRec(oldRecOffset, oldRecLen); err != nil {
+		if err = t.OverwriteRec(oldRecOffset, oldRecLen); err != nil {
 			return err
 		}
 
 		// Update the index with the new offset since the record is in a
 		// new position in the file.
-		t.offsets[id] = recOffset
+		t.Offsets[id] = recOffset
 	} else {
 		// Changed record is the same length as the record in the table.
-		err = t.writeRec(oldRecOffset, 0, rec)
+		err = t.WriteRec(oldRecOffset, 0, rec)
 		if err != nil {
 			return err
 		}
@@ -281,12 +285,12 @@ func (t *tableFile) updateRec(id int, rec []byte) error {
 	return nil
 }
 
-func (t *tableFile) writeRec(offset int64, whence int, rec []byte) error {
+func (t *Table) WriteRec(offset int64, whence int, rec []byte) error {
 	var err error
 
-	w := bufio.NewWriter(t.ptr)
+	w := bufio.NewWriter(t.TableFile)
 
-	if _, err = t.ptr.Seek(offset, whence); err != nil {
+	if _, err = t.TableFile.Seek(offset, whence); err != nil {
 		return err
 	}
 
@@ -299,23 +303,22 @@ func (t *tableFile) writeRec(offset int64, whence int, rec []byte) error {
 	return nil
 }
 
-func padRec(padLength int) []byte {
+func PadRec(padLength int) []byte {
 	extraData := make([]byte, padLength)
 
 	extraData[0] = '\n'
 
 	for i := 1; i < padLength; i++ {
-		extraData[i] = dummyRune
+		extraData[i] = PaddingRune
 	}
 
 	return extraData
 }
 
-// dummiesTooShortError is a place to hold a custom error used
+// PaddingTooShortError is a place to hold a custom error used
 // as part of a switch.
-type dummiesTooShortError struct {
-}
+type PaddingTooShortError struct{}
 
-func (e dummiesTooShortError) Error() string {
-	return "all dummy records are too short"
+func (e PaddingTooShortError) Error() string {
+	return "all padded records are too short"
 }
