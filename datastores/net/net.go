@@ -1,21 +1,33 @@
 package net
 
 import (
+	"net/url"
+	"path/filepath"
+	"strings"
+
 	"github.com/ohzqq/hare/datastores/store"
 )
 
 type Net struct {
 	*store.Store
-	name string
+	*url.URL
 }
 
-func New(tableName string, data []byte) (*Net, error) {
+func New(uri string, data []byte) (*Net, error) {
 	n := &Net{
 		Store: store.New(),
-		name:  tableName,
 	}
 
-	err := n.Store.CreateTable(tableName, store.NewMemFile(data))
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
+	n.URL = u
+
+	tableName := filepath.Base(n.Path)
+	tableName = strings.TrimSuffix(tableName, filepath.Ext(n.Path))
+
+	err = n.Store.CreateTable(tableName, store.NewMemFile(data))
 	if err != nil {
 		return nil, err
 	}
