@@ -62,7 +62,7 @@ func (dsk *Disk) Close() error {
 // CreateTable takes a table name, creates a new disk
 // file, and adds it to the map of tables in the
 // datastore.
-func (dsk *Disk) CreateTable(tableName string, table store.TableFile) error {
+func (dsk *Disk) CreateTable(tableName string) error {
 	if dsk.TableExists(tableName) {
 		return dberr.ErrTableExists
 	}
@@ -146,11 +146,7 @@ func (dsk *Disk) compactFile(tableName string) error {
 		return err
 	}
 
-	f, err := OpenFile(dsk.path, tableName, dsk.ext)
-	if err != nil {
-		return err
-	}
-	err = dsk.CreateTable(tableName, f)
+	err = dsk.CreateTable(tableName)
 	if err != nil {
 		return err
 	}

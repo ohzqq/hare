@@ -36,3 +36,7 @@ func New(tables map[string][]byte) (*Ram, error) {
 	}
 	return ram, nil
 }
+
+func (ram *Ram) CreateTable(tableName string) error {
+	return ram.Store.CreateTable(tableName, Mem([]byte{}))
+}

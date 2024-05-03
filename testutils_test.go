@@ -10,7 +10,6 @@ import (
 
 	"github.com/ohzqq/hare/datastores/disk"
 	"github.com/ohzqq/hare/datastores/ram"
-	"github.com/ohzqq/hare/datastores/table"
 )
 
 type Contact struct {
@@ -78,7 +77,7 @@ func runTestFns(t *testing.T, testFns []func(*Database) func(*testing.T)) {
 	}
 }
 
-func newTestRam(t *testing.T) *table.Ram {
+func newTestRam(t *testing.T) *ram.Ram {
 	d, err := os.ReadFile("./testdata/contacts.bak")
 	if err != nil {
 		t.Fatal(err)
@@ -87,7 +86,7 @@ func newTestRam(t *testing.T) *table.Ram {
 		"contacts": d,
 	}
 
-	ram, err := table.NewRam(tables)
+	ram, err := ram.New(tables)
 	if err != nil {
 		t.Fatalf("newTestRam error %v\n", err)
 	}
@@ -124,16 +123,14 @@ func testRemoveFiles(t *testing.T) {
 	}
 }
 
-func seedData() map[string]map[int]string {
-	tblMap := make(map[string]map[int]string)
-	contactsMap := make(map[int]string)
+func seedData() map[string][]byte {
+	contacts := []byte(`{"id":1,"first_name":"John","last_name":"Doe","age":37}
+{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}
+{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}
+{"id":4,"first_name":"Helen","last_name":"Keller","age":25}
+`)
 
-	contactsMap[1] = `{"id":1,"first_name":"John","last_name":"Doe","age":37}`
-	contactsMap[2] = `{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}`
-	contactsMap[3] = `{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}`
-	contactsMap[4] = `{"id":4,"first_name":"Helen","last_name":"Keller","age":25}`
-
-	tblMap["contacts"] = contactsMap
-
-	return tblMap
+	return map[string][]byte{
+		"contacts": contacts,
+	}
 }
