@@ -1,5 +1,9 @@
 package net
 
+import (
+	"github.com/ohzqq/hare/datastores/store"
+)
+
 type Net struct {
 	*store.Store
 	name string
