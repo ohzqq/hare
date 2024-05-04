@@ -79,10 +79,6 @@ func TestCreateTableDiskTests(t *testing.T) {
 			dsk := newTestDisk(t)
 			defer dsk.Close()
 
-			//f, err := OpenFile(dsk.path, "newtable", dsk.ext)
-			//if err != nil {
-			//t.Fatal(err)
-			//}
 			err := dsk.CreateTable("newtable")
 			if err != nil {
 				t.Fatal(err)
@@ -104,11 +100,6 @@ func TestCreateTableDiskTests(t *testing.T) {
 
 			dsk := newTestDisk(t)
 			defer dsk.Close()
-
-			//f, err := OpenFile(dsk.path, "contacts", dsk.ext)
-			//if err != nil {
-			//t.Fatal(err)
-			//}
 
 			wantErr := dberr.ErrTableExists
 			gotErr := dsk.CreateTable("contacts")

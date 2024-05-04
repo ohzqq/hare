@@ -37,16 +37,6 @@ func New(path string, ext string) (*Disk, error) {
 	return dsk, nil
 }
 
-func OpenFile(path, tableName, ext string) (*os.File, error) {
-	p := filepath.Join(path, tableName+ext)
-
-	if fileExists(p) {
-		return os.Open(p)
-	}
-
-	return os.Create(p)
-}
-
 // Close closes the datastore.
 func (dsk *Disk) Close() error {
 	err := dsk.Store.Close()
@@ -67,12 +57,12 @@ func (dsk *Disk) CreateTable(tableName string) error {
 	if dsk.TableExists(tableName) {
 		return dberr.ErrTableExists
 	}
-	//filePtr, err := dsk.openFile(tableName, true)
-	path := filepath.Join(dsk.path, tableName+dsk.ext)
-	filePtr, err := os.Create(path)
+
+	filePtr, err := dsk.openFile(tableName, true)
 	if err != nil {
 		return err
 	}
+
 	err = dsk.Store.CreateTable(tableName, filePtr)
 	if err != nil {
 		return err
@@ -88,7 +78,6 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 	if err != nil {
 		return err
 	}
-
 	tableFile.Close()
 
 	if err := os.Remove(dsk.getTablePath(tableName)); err != nil {
@@ -119,8 +108,7 @@ func (dsk Disk) openFile(tableName string, createIfNeeded bool) (*os.File, error
 		osFlag = os.O_RDWR
 	}
 
-	path := filepath.Join(dsk.path, tableName+dsk.ext)
-	filePtr, err := os.OpenFile(path, osFlag, 0660)
+	filePtr, err := os.OpenFile(dsk.getTablePath(tableName), osFlag, 0660)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +169,7 @@ func (dsk *Disk) compactFile(tableName string) error {
 }
 
 func (dsk *Disk) getTablePath(tableName string) string {
-	if dsk.Store.TableExists(tableName) {
-		return filepath.Join(dsk.path, tableName+dsk.ext)
-	}
-	return ""
+	return filepath.Join(dsk.path, tableName+dsk.ext)
 }
 
 func (dsk *Disk) getTableNames() ([]string, error) {
