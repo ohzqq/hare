@@ -17,7 +17,7 @@ type Record interface {
 	AfterFind(*Database) error
 }
 
-type datastorage interface {
+type Datastorage interface {
 	Close() error
 	CreateTable(string) error
 	DeleteRec(string, int) error
@@ -33,14 +33,14 @@ type datastorage interface {
 
 // Database struct is the main struct for the Hare package.
 type Database struct {
-	store   datastorage
+	store   Datastorage
 	locks   map[string]*sync.RWMutex
 	lastIDs map[string]int
 }
 
 // New takes a datastorage and returns a pointer to a
 // Database struct.
-func New(ds datastorage) (*Database, error) {
+func New(ds Datastorage) (*Database, error) {
 	db := &Database{store: ds}
 	db.locks = make(map[string]*sync.RWMutex)
 	db.lastIDs = make(map[string]int)
