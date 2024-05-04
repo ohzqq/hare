@@ -2,6 +2,7 @@ package disk
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,12 +39,12 @@ func New(path string, ext string) (*Disk, error) {
 
 func OpenFile(path, tableName, ext string) (*os.File, error) {
 	p := filepath.Join(path, tableName+ext)
-	filePtr, err := os.OpenFile(p, os.O_CREATE|os.O_RDWR, 0660)
-	if err != nil {
-		return nil, err
+
+	if fileExists(p) {
+		return os.Open(p)
 	}
 
-	return filePtr, nil
+	return os.Create(p)
 }
 
 // Close closes the datastore.
@@ -66,12 +67,12 @@ func (dsk *Disk) CreateTable(tableName string) error {
 	if dsk.TableExists(tableName) {
 		return dberr.ErrTableExists
 	}
-
-	filePtr, err := OpenFile(dsk.path, tableName, dsk.ext)
+	//filePtr, err := dsk.openFile(tableName, true)
+	path := filepath.Join(dsk.path, tableName+dsk.ext)
+	filePtr, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-
 	err = dsk.Store.CreateTable(tableName, filePtr)
 	if err != nil {
 		return err
@@ -108,6 +109,24 @@ func (dsk *Disk) CompactTable(tableName string) error {
 //******************************************************************************
 // UNEXPORTED METHODS
 //******************************************************************************
+
+func (dsk Disk) openFile(tableName string, createIfNeeded bool) (*os.File, error) {
+	var osFlag int
+
+	if createIfNeeded {
+		osFlag = os.O_CREATE | os.O_RDWR
+	} else {
+		osFlag = os.O_RDWR
+	}
+
+	path := filepath.Join(dsk.path, tableName+dsk.ext)
+	filePtr, err := os.OpenFile(path, osFlag, 0660)
+	if err != nil {
+		return nil, err
+	}
+
+	return filePtr, nil
+}
 
 func (dsk *Disk) compactFile(tableName string) error {
 	tableFile, err := dsk.GetTableFile(tableName)
@@ -162,7 +181,7 @@ func (dsk *Disk) compactFile(tableName string) error {
 }
 
 func (dsk *Disk) getTablePath(tableName string) string {
-	if dsk.TableExists(tableName) {
+	if dsk.Store.TableExists(tableName) {
 		return filepath.Join(dsk.path, tableName+dsk.ext)
 	}
 	return ""
@@ -192,7 +211,7 @@ func (dsk *Disk) init() error {
 	}
 
 	for _, tableName := range tableNames {
-		filePtr, err := OpenFile(dsk.path, tableName, dsk.ext)
+		filePtr, err := dsk.openFile(tableName, false)
 		if err != nil {
 			return err
 		}
@@ -204,4 +223,9 @@ func (dsk *Disk) init() error {
 	}
 
 	return nil
+}
+
+func fileExists(path string) bool {
+	_, error := os.Stat(path)
+	return !errors.Is(error, os.ErrNotExist)
 }
