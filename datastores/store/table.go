@@ -62,11 +62,11 @@ func NewTable(filePtr TableFile) (*Table, error) {
 		if err := json.Unmarshal(rec, &recMap); err != nil {
 			return nil, err
 		}
+
 		if id, ok := recMap["id"]; ok {
 			recMapID := int(id.(float64))
+			tableFile.Offsets[recMapID] = currentOffset
 		}
-
-		tableFile.Offsets[recMapID] = currentOffset
 	}
 
 	return &tableFile, nil
