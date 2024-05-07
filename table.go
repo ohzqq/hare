@@ -11,7 +11,7 @@ type Table struct {
 	db   *Database     `json:"-"`
 	lock *sync.RWMutex `json:"-"`
 	Name string        `json:"name"`
-	Row  int           `json:"_id"`
+	ID   int           `json:"_id"`
 }
 
 // Find takes a record id, and a pointer to a struct that
@@ -130,11 +130,11 @@ func (tbl *Table) Delete(id int) error {
 
 // Satisfy Record interface so a table can also be a record.
 func (t *Table) SetID(id int) {
-	t.Row = id
+	t.ID = id
 }
 
 func (t *Table) GetID() int {
-	return t.Row
+	return t.ID
 }
 
 func (t *Table) AfterFind(db *Database) error {
