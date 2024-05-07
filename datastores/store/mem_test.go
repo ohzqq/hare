@@ -1,4 +1,4 @@
-package ram
+package store
 
 import (
 	"errors"
@@ -14,7 +14,7 @@ func TestNewCloseRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//New...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantOffsets := make(map[int]int64)
@@ -32,7 +32,7 @@ func TestNewCloseRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//Close...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -58,10 +58,10 @@ func TestCreateTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//CreateTable...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
-			err := dsk.CreateTable("newtable")
+			err := dsk.CreateTable("newtable", NewMemFile([]byte{}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -76,11 +76,11 @@ func TestCreateTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//CreateTable (TableExists error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrTableExists
-			gotErr := dsk.CreateTable("contacts")
+			gotErr := dsk.CreateTable("contacts", newMemFile(t))
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -96,7 +96,7 @@ func TestDeleteRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//DeleteRec...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			err := dsk.DeleteRec("contacts", 3)
@@ -114,7 +114,7 @@ func TestDeleteRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//DeleteRec (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -134,7 +134,7 @@ func TestGetLastIDRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//GetLastID...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			want := 4
@@ -150,7 +150,7 @@ func TestGetLastIDRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//GetLastID (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -170,7 +170,7 @@ func TestIDsRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//IDs...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			want := []int{1, 2, 3, 4}
@@ -195,7 +195,7 @@ func TestIDsRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//IDs (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -215,7 +215,7 @@ func TestInsertRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//InsertRec...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			err := dsk.InsertRec("contacts", 5, []byte(`{"id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
@@ -238,7 +238,7 @@ func TestInsertRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//InsertRec (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -251,7 +251,7 @@ func TestInsertRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//InsertRec (IDExists error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrIDExists
@@ -282,7 +282,7 @@ func TestReadRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//ReadRec...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			rec, err := dsk.ReadRec("contacts", 3)
@@ -300,7 +300,7 @@ func TestReadRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//ReadRec (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -320,7 +320,7 @@ func TestRemoveTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//RemoveTable...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			err := dsk.RemoveTable("contacts")
@@ -338,7 +338,7 @@ func TestRemoveTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//RemoveTable (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -358,7 +358,7 @@ func TestTableExistsRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//TableExists...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			want := true
@@ -385,7 +385,7 @@ func TestTableNamesRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//TableNames...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			want := []string{"contacts"}
@@ -414,7 +414,7 @@ func TestUpdateRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//UpdateRec...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			err := dsk.UpdateRec("contacts", 3, []byte(`{"id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
@@ -437,7 +437,7 @@ func TestUpdateRecRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//UpdateRec (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
@@ -457,7 +457,7 @@ func TestCloseTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//closeTable...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			err := dsk.CloseTable("contacts")
@@ -468,7 +468,7 @@ func TestCloseTableRamTests(t *testing.T) {
 		func(t *testing.T) {
 			//closeTable (NoTable error)...
 
-			dsk := newTestRam(t)
+			dsk := testNewStore(t)
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable

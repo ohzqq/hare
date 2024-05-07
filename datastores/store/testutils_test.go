@@ -16,18 +16,31 @@ func runTestFns(t *testing.T, tests []func(t *testing.T)) {
 }
 
 func newTestTableMem(t *testing.T) *Table {
+	tf, err := NewTable(newMemFile(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tf
+}
+
+func newMemFile(t *testing.T) *MemFile {
 	d, err := os.ReadFile("./testdata/contacts.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	mem := NewMemFile(d)
+	return NewMemFile(d)
+}
 
-	tf, err := NewTable(mem)
+func testNewStore(t *testing.T) *Store {
+	s := New()
+
+	err := s.CreateTable("contacts", newMemFile(t))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return tf
+
+	return s
 }
 
 func testSetup(t *testing.T) {
