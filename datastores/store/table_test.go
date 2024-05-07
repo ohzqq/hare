@@ -1,4 +1,4 @@
-package disk
+package store
 
 import (
 	"bufio"
@@ -8,25 +8,24 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ohzqq/hare/datastores/store"
 	"github.com/ohzqq/hare/dberr"
 )
 
-func TestNewCloseTableFileTests(t *testing.T) {
+func TestNewCloseTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//New...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
 			want := make(map[int]int64)
 			want[1] = 0
-			want[2] = 101
-			want[3] = 160
-			want[4] = 224
+			want[2] = 102
+			want[3] = 162
+			want[4] = 227
 
-			got := tf.Offsets
+			got := tf.offsets
 
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v; got %v", want, got)
@@ -35,7 +34,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 		func(t *testing.T) {
 			//close...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			tf.Close()
 
 			wantErr := dberr.ErrNoRecord
@@ -45,7 +44,7 @@ func TestNewCloseTableFileTests(t *testing.T) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			got := tf.Offsets
+			got := tf.offsets
 
 			if nil != got {
 				t.Errorf("want %v; got %v", nil, got)
@@ -56,22 +55,22 @@ func TestNewCloseTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestDeleteRecTableFileTests(t *testing.T) {
+func TestDeleteRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//deleteRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			offset := tf.Offsets[3]
+			offset := tf.offsets[3]
 
 			err := tf.DeleteRec(3)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
+			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
 			r := bufio.NewReader(tf)
 
@@ -94,12 +93,12 @@ func TestDeleteRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestGetLastIDTableFileTests(t *testing.T) {
+func TestGetLastIDTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//getLastID...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
 			want := 4
@@ -114,12 +113,12 @@ func TestGetLastIDTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestIDsTableFileTests(t *testing.T) {
+func TestIDsTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//ids...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
 			want := []int{1, 2, 3, 4}
@@ -142,25 +141,25 @@ func TestIDsTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestOffsetsTableFileTests(t *testing.T) {
+func TestOffsetsTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//offsetForWritingRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
 			tests := []struct {
 				recLen int
 				want   int
 			}{
-				{45, 284},
-				{44, 56},
+				{45, 288},
+				{44, 57},
 			}
 
 			for _, tt := range tests {
 				want := int64(tt.want)
-				got, err := tf.OffsetForWritingRec(tt.recLen)
+				got, err := tf.offsetForWritingRec(tt.recLen)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -172,7 +171,7 @@ func TestOffsetsTableFileTests(t *testing.T) {
 		func(t *testing.T) {
 			//offsetToFitRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
 			tests := []struct {
@@ -180,13 +179,13 @@ func TestOffsetsTableFileTests(t *testing.T) {
 				want    int
 				wanterr error
 			}{
-				{284, 0, store.PaddingTooShortError{}},
-				{44, 56, nil},
+				{284, 0, paddingTooShortError{}},
+				{44, 57, nil},
 			}
 
 			for _, tt := range tests {
 				want := int64(tt.want)
-				got, goterr := tf.OffsetToFitRec(tt.recLen)
+				got, goterr := tf.offsetToFitRec(tt.recLen)
 				if !((want == got) && (errors.Is(goterr, tt.wanterr))) {
 					t.Errorf("want %v; wanterr %v; got %v; goterr %v", want, tt.wanterr, got, goterr)
 				}
@@ -197,22 +196,22 @@ func TestOffsetsTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestOverwriteRecTableFileTests(t *testing.T) {
+func TestOverwriteRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//overwriteRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			offset := tf.Offsets[3]
+			offset := tf.offsets[3]
 
-			err := tf.OverwriteRec(160, 64)
+			err := tf.overwriteRec(160, 64)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
+			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
 			r := bufio.NewReader(tf)
 
@@ -235,12 +234,12 @@ func TestOverwriteRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestReadRecTableFileTests(t *testing.T) {
+func TestReadRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
-			//readRec...
+			//ReadRec...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
 			rec, err := tf.ReadRec(3)
@@ -248,7 +247,7 @@ func TestReadRecTableFileTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -260,21 +259,21 @@ func TestReadRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestUpdateRecTableFileTests(t *testing.T) {
+func TestUpdateRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//updateRec (fits on same line)...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			err := tf.UpdateRec(3, []byte("{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
+			err := tf.UpdateRec(3, []byte("{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			wantOffset := int64(160)
-			gotOffset := tf.Offsets[3]
+			wantOffset := int64(162)
+			gotOffset := tf.offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
@@ -285,7 +284,7 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}\n"
+			want := "{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}\n"
 			got := string(rec)
 
 			if want != got {
@@ -295,16 +294,16 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 		func(t *testing.T) {
 			//updateRec (does not fit on same line)...
 
-			tf := newTestTableFile(t)
+			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			err := tf.UpdateRec(3, []byte("{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
+			err := tf.UpdateRec(3, []byte("{\"_id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			wantOffset := int64(284)
-			gotOffset := tf.Offsets[3]
+			wantOffset := int64(288)
+			gotOffset := tf.offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
@@ -315,7 +314,7 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"_id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -327,13 +326,13 @@ func TestUpdateRecTableFileTests(t *testing.T) {
 	runTestFns(t, tests)
 }
 
-func TestPadRecTableFileTests(t *testing.T) {
+func TestPadRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
 			//padRec...
 
 			want := "\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-			got := string(store.PadRec(50))
+			got := string(padRec(50))
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)

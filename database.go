@@ -3,7 +3,6 @@
 package hare
 
 import (
-	"encoding/json"
 	"sync"
 
 	"github.com/ohzqq/hare/dberr"
@@ -79,6 +78,24 @@ func (db *Database) Close() error {
 	return nil
 }
 
+// GetTable takes a table name and returns the associated database table.
+func (db *Database) GetTable(tableName string) (*Table, error) {
+	if !db.TableExists(tableName) {
+		return nil, dberr.ErrNoTable
+	}
+
+	tbl := &Table{
+		Name: tableName,
+	}
+
+	err := tbl.AfterFind(db)
+	if err != nil {
+		return nil, err
+	}
+
+	return tbl, nil
+}
+
 // CreateTable takes a table name and creates and
 // initializes a new table.
 func (db *Database) CreateTable(tableName string) error {
@@ -104,14 +121,12 @@ func (db *Database) CreateTable(tableName string) error {
 // Delete takes a table name and record id and removes that
 // record from the database.
 func (db *Database) Delete(tableName string, id int) error {
-	if !db.TableExists(tableName) {
-		return dberr.ErrNoTable
+	tbl, err := db.GetTable(tableName)
+	if err != nil {
+		return err
 	}
 
-	db.locks[tableName].Lock()
-	defer db.locks[tableName].Unlock()
-
-	if err := db.store.DeleteRec(tableName, id); err != nil {
+	if err := tbl.Delete(id); err != nil {
 		return err
 	}
 
@@ -144,73 +159,35 @@ func (db *Database) DropTable(tableName string) error {
 // implements the Record interface, finds the associated record from the
 // table, and populates the struct.
 func (db *Database) Find(tableName string, id int, rec Record) error {
-	if !db.TableExists(tableName) {
-		return dberr.ErrNoTable
-	}
-
-	db.locks[tableName].RLock()
-	defer db.locks[tableName].RUnlock()
-
-	rawRec, err := db.store.ReadRec(tableName, id)
+	tbl, err := db.GetTable(tableName)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(rawRec, rec)
-	if err != nil {
-		return err
-	}
-
-	err = rec.AfterFind(db)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tbl.Find(id, rec)
 }
 
 // IDs takes a table name and returns a list of all record ids for
 // that table.
 func (db *Database) IDs(tableName string) ([]int, error) {
-	if !db.TableExists(tableName) {
-		return nil, dberr.ErrNoTable
-	}
-
-	db.locks[tableName].Lock()
-	defer db.locks[tableName].Unlock()
-
-	ids, err := db.store.IDs(tableName)
+	tbl, err := db.GetTable(tableName)
 	if err != nil {
 		return nil, err
 	}
 
-	return ids, err
+	return tbl.IDs()
 }
 
 // Insert takes a table name and a struct that implements the Record
 // interface and adds a new record to the table.  It returns the
 // new record's id.
 func (db *Database) Insert(tableName string, rec Record) (int, error) {
-	if !db.TableExists(tableName) {
-		return 0, dberr.ErrNoTable
-	}
-
-	db.locks[tableName].Lock()
-	defer db.locks[tableName].Unlock()
-
-	id := db.incrementLastID(tableName)
-	rec.SetID(id)
-
-	rawRec, err := json.Marshal(rec)
+	tbl, err := db.GetTable(tableName)
 	if err != nil {
 		return 0, err
 	}
 
-	if err := db.store.InsertRec(tableName, id, rawRec); err != nil {
-		return 0, err
-	}
-
-	return id, nil
+	return tbl.Insert(rec)
 }
 
 // TableExists takes a table name and returns true if the table exists,
@@ -223,25 +200,11 @@ func (db *Database) TableExists(tableName string) bool {
 // interface and updates the record in the table that has that record's
 // id.
 func (db *Database) Update(tableName string, rec Record) error {
-	if !db.TableExists(tableName) {
-		return dberr.ErrNoTable
-	}
-
-	db.locks[tableName].Lock()
-	defer db.locks[tableName].Unlock()
-
-	id := rec.GetID()
-
-	rawRec, err := json.Marshal(rec)
+	tbl, err := db.GetTable(tableName)
 	if err != nil {
 		return err
 	}
-
-	if err := db.store.UpdateRec(tableName, id, rawRec); err != nil {
-		return err
-	}
-
-	return nil
+	return tbl.Update(rec)
 }
 
 // unexported methods
