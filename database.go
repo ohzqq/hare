@@ -31,11 +31,6 @@ type Datastorage interface {
 	UpdateRec(string, int, []byte) error
 }
 
-type Table struct {
-	store Datastorage
-	Name  string
-}
-
 // Database struct is the main struct for the Hare package.
 type Database struct {
 	store   Datastorage
@@ -82,6 +77,19 @@ func (db *Database) Close() error {
 	db.lastIDs = nil
 
 	return nil
+}
+
+// GetTable takes a table name and returns the associated database table.
+func (db *Database) GetTable(tableName string) (*Table, error) {
+	if !db.TableExists(tableName) {
+		return nil, dberr.ErrNoTable
+	}
+
+	return &Table{
+		db:   db,
+		lock: &sync.RWMutex{},
+		Name: tableName,
+	}, nil
 }
 
 // CreateTable takes a table name and creates and

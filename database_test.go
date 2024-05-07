@@ -207,8 +207,13 @@ func TestTableTests(t *testing.T) {
 			//IDs()...
 
 			return func(t *testing.T) {
+				tbl, err := db.GetTable("contacts")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				want := []int{1, 2, 3, 4}
-				got, err := db.IDs("contacts")
+				got, err := tbl.IDs()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -247,12 +252,17 @@ func TestRecordTests(t *testing.T) {
 			//Delete...
 
 			return func(t *testing.T) {
-				err := db.Delete("contacts", 3)
+				tbl, err := db.GetTable("contacts")
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				checkErr(t, dberr.ErrNoRecord, db.Find("contacts", 3, &Contact{}))
+				err = tbl.Delete(3)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				checkErr(t, dberr.ErrNoRecord, tbl.Find(3, &Contact{}))
 			}
 		},
 		func(db *Database) func(*testing.T) {
@@ -273,9 +283,14 @@ func TestRecordTests(t *testing.T) {
 			//Find...
 
 			return func(t *testing.T) {
+				tbl, err := db.GetTable("contacts")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				c := Contact{}
 
-				err := db.Find("contacts", 2, &c)
+				err = tbl.Find(2, &c)
 				if err != nil {
 					t.Fatal(err)
 				}
