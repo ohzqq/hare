@@ -13,7 +13,7 @@ import (
 )
 
 type Contact struct {
-	ID        int    `json:"id"`
+	ID        int    `json:"row"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Age       int    `json:"age"`
@@ -52,7 +52,7 @@ func runTestFns(t *testing.T, testFns []func(*Database) func(*testing.T)) {
 
 		t.Run(fmt.Sprintf("disk/%s", tstNum), fn(diskDB))
 
-		ramDS, err := ram.New(seedData())
+		ramDS, err := ram.NewWithTables(seedData())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,7 +86,7 @@ func newTestRam(t *testing.T) *ram.Ram {
 		"contacts": d,
 	}
 
-	ram, err := ram.New(tables)
+	ram, err := ram.NewWithTables(tables)
 	if err != nil {
 		t.Fatalf("newTestRam error %v\n", err)
 	}
@@ -124,10 +124,10 @@ func testRemoveFiles(t *testing.T) {
 }
 
 func seedData() map[string][]byte {
-	contacts := []byte(`{"id":1,"first_name":"John","last_name":"Doe","age":37}
-{"id":2,"first_name":"Abe","last_name":"Lincoln","age":52}
-{"id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}
-{"id":4,"first_name":"Helen","last_name":"Keller","age":25}
+	contacts := []byte(`{"row":1,"first_name":"John","last_name":"Doe","age":37}
+{"row":2,"first_name":"Abe","last_name":"Lincoln","age":52}
+{"row":3,"first_name":"Bill","last_name":"Shakespeare","age":18}
+{"row":4,"first_name":"Helen","last_name":"Keller","age":25}
 `)
 
 	return map[string][]byte{

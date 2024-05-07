@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/ohzqq/hare/datastores/store"
 	"github.com/ohzqq/hare/dberr"
 )
 
@@ -29,6 +30,11 @@ type Datastorage interface {
 	TableExists(string) bool
 	TableNames() []string
 	UpdateRec(string, int, []byte) error
+}
+
+type Table struct {
+	table *store.Table
+	Name  string
 }
 
 // Database struct is the main struct for the Hare package.

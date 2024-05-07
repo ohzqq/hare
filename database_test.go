@@ -47,7 +47,7 @@ func TestCloseDatabaseTests(t *testing.T) {
 		func(t *testing.T) {
 			//Close Ram Database...
 
-			r, err := ram.New(seedData())
+			r, err := ram.NewWithTables(seedData())
 			if err != nil {
 				t.Fatal(err)
 			}
