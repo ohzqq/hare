@@ -200,6 +200,11 @@ func (db *Database) TableExists(tableName string) bool {
 	return db.tableExists(tableName) && db.store.TableExists(tableName)
 }
 
+// TableNames lists the current tables.
+func (db *Database) TableNames() []string {
+	return db.store.TableNames()
+}
+
 // Update takes a table name and a struct that implements the Record
 // interface and updates the record in the table that has that record's
 // id.
