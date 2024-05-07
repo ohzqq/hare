@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/ohzqq/hare/datastores/store"
 	"github.com/ohzqq/hare/dberr"
 )
 
@@ -33,7 +32,7 @@ type Datastorage interface {
 }
 
 type Table struct {
-	table *store.Table
+	store Datastorage
 	Name  string
 }
 
