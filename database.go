@@ -85,7 +85,6 @@ func (db *Database) GetTable(tableName string) (*Table, error) {
 	}
 
 	tbl := &Table{
-		lock: &sync.RWMutex{},
 		Name: tableName,
 	}
 

@@ -2,16 +2,21 @@ package hare
 
 import (
 	"encoding/json"
-	"sync"
 
 	"github.com/ohzqq/hare/dberr"
 )
 
 type Table struct {
-	db   *Database     `json:"-"`
-	lock *sync.RWMutex `json:"-"`
-	Name string        `json:"name"`
-	ID   int           `json:"_id"`
+	db   *Database `json:"-"`
+	Name string    `json:"name"`
+	ID   int       `json:"_id"`
+}
+
+// Close closes the table.
+func (tbl *Table) Close() error {
+	tbl.db.locks[tbl.Name].Unlock()
+	tbl.db = nil
+	return nil
 }
 
 // Find takes a record id, and a pointer to a struct that
@@ -22,8 +27,8 @@ func (tbl *Table) Find(id int, rec Record) error {
 		return dberr.ErrNoTable
 	}
 
-	tbl.lock.RLock()
-	defer tbl.lock.RUnlock()
+	tbl.db.locks[tbl.Name].Lock()
+	defer tbl.db.locks[tbl.Name].Unlock()
 
 	rawRec, err := tbl.db.store.ReadRec(tbl.Name, id)
 	if err != nil {
@@ -49,8 +54,8 @@ func (tbl *Table) IDs() ([]int, error) {
 		return nil, dberr.ErrNoTable
 	}
 
-	tbl.lock.Lock()
-	defer tbl.lock.Unlock()
+	tbl.db.locks[tbl.Name].Lock()
+	defer tbl.db.locks[tbl.Name].Unlock()
 
 	ids, err := tbl.db.store.IDs(tbl.Name)
 	if err != nil {
@@ -68,8 +73,8 @@ func (tbl *Table) Insert(rec Record) (int, error) {
 		return 0, dberr.ErrNoTable
 	}
 
-	tbl.lock.Lock()
-	defer tbl.lock.Unlock()
+	tbl.db.locks[tbl.Name].Lock()
+	defer tbl.db.locks[tbl.Name].Unlock()
 
 	id := tbl.db.incrementLastID(tbl.Name)
 	rec.SetID(id)
@@ -94,8 +99,8 @@ func (tbl *Table) Update(rec Record) error {
 		return dberr.ErrNoTable
 	}
 
-	tbl.lock.Lock()
-	defer tbl.lock.Unlock()
+	tbl.db.locks[tbl.Name].Lock()
+	defer tbl.db.locks[tbl.Name].Unlock()
 
 	id := rec.GetID()
 
@@ -118,8 +123,8 @@ func (tbl *Table) Delete(id int) error {
 		return dberr.ErrNoTable
 	}
 
-	tbl.lock.Lock()
-	defer tbl.lock.Unlock()
+	tbl.db.locks[tbl.Name].Lock()
+	defer tbl.db.locks[tbl.Name].Unlock()
 
 	if err := tbl.db.store.DeleteRec(tbl.Name, id); err != nil {
 		return err
