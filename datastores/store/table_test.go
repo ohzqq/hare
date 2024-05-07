@@ -21,9 +21,9 @@ func TestNewCloseTableMemTests(t *testing.T) {
 
 			want := make(map[int]int64)
 			want[1] = 0
-			want[2] = 101
-			want[3] = 160
-			want[4] = 224
+			want[2] = 102
+			want[3] = 162
+			want[4] = 227
 
 			got := tf.offsets
 
@@ -70,7 +70,7 @@ func TestDeleteRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
+			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
 			r := bufio.NewReader(tf)
 
@@ -153,8 +153,8 @@ func TestOffsetsTableMemTests(t *testing.T) {
 				recLen int
 				want   int
 			}{
-				{45, 284},
-				{44, 56},
+				{45, 288},
+				{44, 57},
 			}
 
 			for _, tt := range tests {
@@ -180,7 +180,7 @@ func TestOffsetsTableMemTests(t *testing.T) {
 				wanterr error
 			}{
 				{284, 0, paddingTooShortError{}},
-				{44, 56, nil},
+				{44, 57, nil},
 			}
 
 			for _, tt := range tests {
@@ -211,7 +211,7 @@ func TestOverwriteRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
+			want := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n"
 
 			r := bufio.NewReader(tf)
 
@@ -247,7 +247,7 @@ func TestReadRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -267,12 +267,12 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			err := tf.UpdateRec(3, []byte("{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
+			err := tf.UpdateRec(3, []byte("{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			wantOffset := int64(160)
+			wantOffset := int64(162)
 			gotOffset := tf.offsets[3]
 
 			if wantOffset != gotOffset {
@@ -284,7 +284,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}\n"
+			want := "{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}\n"
 			got := string(rec)
 
 			if want != got {
@@ -297,12 +297,12 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			err := tf.UpdateRec(3, []byte("{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
+			err := tf.UpdateRec(3, []byte("{\"row\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			wantOffset := int64(284)
+			wantOffset := int64(288)
 			gotOffset := tf.offsets[3]
 
 			if wantOffset != gotOffset {
@@ -314,7 +314,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"row\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
