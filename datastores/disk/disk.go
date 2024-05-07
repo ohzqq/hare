@@ -1,9 +1,7 @@
 package disk
 
 import (
-	"bytes"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -14,8 +12,8 @@ import (
 // Disk is a struct that holds a map of all the
 // table files in a database directory.
 type Disk struct {
-	path string
-	ext  string
+	Path string
+	Ext  string
 	*store.Store
 }
 
@@ -26,8 +24,8 @@ func New(path string, ext string) (*Disk, error) {
 		Store: store.New(),
 	}
 
-	dsk.path = path
-	dsk.ext = ext
+	dsk.Path = path
+	dsk.Ext = ext
 
 	if err := dsk.init(); err != nil {
 		return nil, err
@@ -53,8 +51,8 @@ func (dsk *Disk) Close() error {
 		return err
 	}
 
-	dsk.path = ""
-	dsk.ext = ""
+	dsk.Path = ""
+	dsk.Ext = ""
 
 	return nil
 }
@@ -67,7 +65,7 @@ func (dsk *Disk) CreateTable(tableName string) error {
 		return dberr.ErrTableExists
 	}
 
-	filePtr, err := OpenFile(dsk.path, tableName, dsk.ext)
+	filePtr, err := OpenFile(dsk.Path, tableName, dsk.Ext)
 	if err != nil {
 		return err
 	}
@@ -83,7 +81,7 @@ func (dsk *Disk) CreateTable(tableName string) error {
 // RemoveTable takes a table name and deletes that table file from the
 // disk.
 func (dsk *Disk) RemoveTable(tableName string) error {
-	tableFile, err := dsk.GetTableFile(tableName)
+	tableFile, err := dsk.GetTable(tableName)
 	if err != nil {
 		return err
 	}
@@ -101,69 +99,69 @@ func (dsk *Disk) RemoveTable(tableName string) error {
 
 // CompactTable takes a table name and compacts that table file on the
 // disk. (Taken from the example)
-func (dsk *Disk) CompactTable(tableName string) error {
-	return dsk.compactFile(tableName)
-}
+//func (dsk *Disk) CompactTable(tableName string) error {
+//  return dsk.compactFile(tableName)
+//}
 
 //******************************************************************************
 // UNEXPORTED METHODS
 //******************************************************************************
 
-func (dsk *Disk) compactFile(tableName string) error {
-	tableFile, err := dsk.GetTableFile(tableName)
-	if err != nil {
-		return err
-	}
-	defer tableFile.Close()
+//func (dsk *Disk) compactFile(tableName string) error {
+//  tableFile, err := dsk.GetTable(tableName)
+//  if err != nil {
+//    return err
+//  }
+//  defer tableFile.Close()
 
-	tablePath := dsk.getTablePath(tableName)
-	backupFilepath := strings.TrimSuffix(tablePath, dsk.ext) + ".old"
+//  tablePath := dsk.getTablePath(tableName)
+//  backupFilepath := strings.TrimSuffix(tablePath, dsk.Ext) + ".old"
 
-	cmd := exec.Command("cp", tablePath, backupFilepath)
-	if err := cmd.Run(); err != nil {
-		return err
-	}
+//  cmd := exec.Command("cp", tablePath, backupFilepath)
+//  if err := cmd.Run(); err != nil {
+//    return err
+//  }
 
-	// copy all records
-	recs := make(map[int][]byte)
+//  // copy all records
+//  recs := make(map[int][]byte)
 
-	ids, err := dsk.IDs(tableName)
-	if err != nil {
-		return err
-	}
+//  ids, err := dsk.IDs(tableName)
+//  if err != nil {
+//    return err
+//  }
 
-	for _, id := range ids {
-		r, err := tableFile.ReadRec(id)
-		if err != nil {
-			return err
-		}
-		recs[id] = bytes.TrimSuffix(r, []byte("\n"))
-	}
+//  for _, id := range ids {
+//    r, err := tableFile.ReadRec(id)
+//    if err != nil {
+//      return err
+//    }
+//    recs[id] = bytes.TrimSuffix(r, []byte("\n"))
+//  }
 
-	// backup table
-	err = dsk.RemoveTable(tableName)
-	if err != nil {
-		return err
-	}
+//  // backup table
+//  err = dsk.RemoveTable(tableName)
+//  if err != nil {
+//    return err
+//  }
 
-	err = dsk.CreateTable(tableName)
-	if err != nil {
-		return err
-	}
+//  err = dsk.CreateTable(tableName)
+//  if err != nil {
+//    return err
+//  }
 
-	for id, rec := range recs {
-		err = dsk.InsertRec(tableName, id, rec)
-		if err != nil {
-			return err
-		}
-	}
+//  for id, rec := range recs {
+//    err = dsk.InsertRec(tableName, id, rec)
+//    if err != nil {
+//      return err
+//    }
+//  }
 
-	return nil
-}
+//  return nil
+//}
 
 func (dsk *Disk) getTablePath(tableName string) string {
 	if dsk.TableExists(tableName) {
-		return filepath.Join(dsk.path, tableName+dsk.ext)
+		return filepath.Join(dsk.Path, tableName+dsk.Ext)
 	}
 	return ""
 }
@@ -171,14 +169,14 @@ func (dsk *Disk) getTablePath(tableName string) string {
 func (dsk *Disk) getTableNames() ([]string, error) {
 	var tableNames []string
 
-	glob := filepath.Join(dsk.path, "*"+dsk.ext)
+	glob := filepath.Join(dsk.Path, "*"+dsk.Ext)
 	files, err := filepath.Glob(glob)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, file := range files {
-		name := strings.TrimSuffix(filepath.Base(file), dsk.ext)
+		name := strings.TrimSuffix(filepath.Base(file), dsk.Ext)
 		tableNames = append(tableNames, name)
 	}
 
@@ -192,7 +190,7 @@ func (dsk *Disk) init() error {
 	}
 
 	for _, tableName := range tableNames {
-		filePtr, err := OpenFile(dsk.path, tableName, dsk.ext)
+		filePtr, err := OpenFile(dsk.Path, tableName, dsk.Ext)
 		if err != nil {
 			return err
 		}

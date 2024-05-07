@@ -8,10 +8,14 @@ type Ram struct {
 	*store.Store
 }
 
-func New(tables map[string][]byte) (*Ram, error) {
-	ram := &Ram{
+func New() *Ram {
+	return &Ram{
 		Store: store.New(),
 	}
+}
+
+func NewWithTables(tables map[string][]byte) (*Ram, error) {
+	ram := New()
 
 	for tableName, data := range tables {
 		err := ram.Store.CreateTable(tableName, store.NewMemFile(data))

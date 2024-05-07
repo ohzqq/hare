@@ -25,7 +25,7 @@ func TestNewCloseTableMemTests(t *testing.T) {
 			want[3] = 160
 			want[4] = 224
 
-			got := tf.Offsets
+			got := tf.offsets
 
 			if !reflect.DeepEqual(want, got) {
 				t.Errorf("want %v; got %v", want, got)
@@ -44,7 +44,7 @@ func TestNewCloseTableMemTests(t *testing.T) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
 
-			got := tf.Offsets
+			got := tf.offsets
 
 			if nil != got {
 				t.Errorf("want %v; got %v", nil, got)
@@ -63,7 +63,7 @@ func TestDeleteRecTableMemTests(t *testing.T) {
 			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			offset := tf.Offsets[3]
+			offset := tf.offsets[3]
 
 			err := tf.DeleteRec(3)
 			if err != nil {
@@ -159,7 +159,7 @@ func TestOffsetsTableMemTests(t *testing.T) {
 
 			for _, tt := range tests {
 				want := int64(tt.want)
-				got, err := tf.OffsetForWritingRec(tt.recLen)
+				got, err := tf.offsetForWritingRec(tt.recLen)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -179,13 +179,13 @@ func TestOffsetsTableMemTests(t *testing.T) {
 				want    int
 				wanterr error
 			}{
-				{284, 0, PaddingTooShortError{}},
+				{284, 0, paddingTooShortError{}},
 				{44, 56, nil},
 			}
 
 			for _, tt := range tests {
 				want := int64(tt.want)
-				got, goterr := tf.OffsetToFitRec(tt.recLen)
+				got, goterr := tf.offsetToFitRec(tt.recLen)
 				if !((want == got) && (errors.Is(goterr, tt.wanterr))) {
 					t.Errorf("want %v; wanterr %v; got %v; goterr %v", want, tt.wanterr, got, goterr)
 				}
@@ -204,9 +204,9 @@ func TestOverwriteRecTableMemTests(t *testing.T) {
 			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			offset := tf.Offsets[3]
+			offset := tf.offsets[3]
 
-			err := tf.OverwriteRec(160, 64)
+			err := tf.overwriteRec(160, 64)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -237,7 +237,7 @@ func TestOverwriteRecTableMemTests(t *testing.T) {
 func TestReadRecTableMemTests(t *testing.T) {
 	var tests = []func(t *testing.T){
 		func(t *testing.T) {
-			//readRec...
+			//ReadRec...
 
 			tf := newTestTableMem(t)
 			defer tf.Close()
@@ -273,7 +273,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 			}
 
 			wantOffset := int64(160)
-			gotOffset := tf.Offsets[3]
+			gotOffset := tf.offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
@@ -303,7 +303,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 			}
 
 			wantOffset := int64(284)
-			gotOffset := tf.Offsets[3]
+			gotOffset := tf.offsets[3]
 
 			if wantOffset != gotOffset {
 				t.Errorf("want %v; got %v", wantOffset, gotOffset)
@@ -332,7 +332,7 @@ func TestPadRecTableMemTests(t *testing.T) {
 			//padRec...
 
 			want := "\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-			got := string(PadRec(50))
+			got := string(padRec(50))
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)
