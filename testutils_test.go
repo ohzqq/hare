@@ -13,7 +13,7 @@ import (
 )
 
 type Contact struct {
-	ID        int    `json:"row"`
+	ID        int    `json:"_id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Age       int    `json:"age"`
@@ -124,10 +124,10 @@ func testRemoveFiles(t *testing.T) {
 }
 
 func seedData() map[string][]byte {
-	contacts := []byte(`{"row":1,"first_name":"John","last_name":"Doe","age":37}
-{"row":2,"first_name":"Abe","last_name":"Lincoln","age":52}
-{"row":3,"first_name":"Bill","last_name":"Shakespeare","age":18}
-{"row":4,"first_name":"Helen","last_name":"Keller","age":25}
+	contacts := []byte(`{"_id":1,"first_name":"John","last_name":"Doe","age":37}
+{"_id":2,"first_name":"Abe","last_name":"Lincoln","age":52}
+{"_id":3,"first_name":"Bill","last_name":"Shakespeare","age":18}
+{"_id":4,"first_name":"Helen","last_name":"Keller","age":25}
 `)
 
 	return map[string][]byte{

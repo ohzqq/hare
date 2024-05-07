@@ -218,7 +218,7 @@ func TestInsertRecRamTests(t *testing.T) {
 			dsk := testNewStore(t)
 			defer dsk.Close()
 
-			err := dsk.InsertRec("contacts", 5, []byte(`{"row":5,"first_name":"Rex","last_name":"Stout","age":77}`))
+			err := dsk.InsertRec("contacts", 5, []byte(`{"_id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -228,7 +228,7 @@ func TestInsertRecRamTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":5,\"first_name\":\"Rex\",\"last_name\":\"Stout\",\"age\":77}\n"
+			want := "{\"_id\":5,\"first_name\":\"Rex\",\"last_name\":\"Stout\",\"age\":77}\n"
 			got := string(rec)
 
 			if want != got {
@@ -242,7 +242,7 @@ func TestInsertRecRamTests(t *testing.T) {
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := dsk.InsertRec("nonexistent", 5, []byte(`{"row":5,"first_name":"Rex","last_name":"Stout","age":77}`))
+			gotErr := dsk.InsertRec("nonexistent", 5, []byte(`{"_id":5,"first_name":"Rex","last_name":"Stout","age":77}`))
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
@@ -255,7 +255,7 @@ func TestInsertRecRamTests(t *testing.T) {
 			defer dsk.Close()
 
 			wantErr := dberr.ErrIDExists
-			gotErr := dsk.InsertRec("contacts", 3, []byte(`{"row":3,"first_name":"Rex","last_name":"Stout","age":77}`))
+			gotErr := dsk.InsertRec("contacts", 3, []byte(`{"_id":3,"first_name":"Rex","last_name":"Stout","age":77}`))
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)
 			}
@@ -265,7 +265,7 @@ func TestInsertRecRamTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -290,7 +290,7 @@ func TestReadRecRamTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -417,7 +417,7 @@ func TestUpdateRecRamTests(t *testing.T) {
 			dsk := testNewStore(t)
 			defer dsk.Close()
 
-			err := dsk.UpdateRec("contacts", 3, []byte(`{"row":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
+			err := dsk.UpdateRec("contacts", 3, []byte(`{"_id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -427,7 +427,7 @@ func TestUpdateRecRamTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":77}\n"
+			want := "{\"_id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":77}\n"
 			got := string(rec)
 
 			if want != got {
@@ -441,7 +441,7 @@ func TestUpdateRecRamTests(t *testing.T) {
 			defer dsk.Close()
 
 			wantErr := dberr.ErrNoTable
-			gotErr := dsk.UpdateRec("nonexistent", 3, []byte(`{"row":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
+			gotErr := dsk.UpdateRec("nonexistent", 3, []byte(`{"_id":3,"first_name":"William","last_name":"Shakespeare","age":77}`))
 
 			if !errors.Is(gotErr, wantErr) {
 				t.Errorf("want %v; got %v", wantErr, gotErr)

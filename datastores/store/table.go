@@ -63,7 +63,7 @@ func NewTable(filePtr TableFile) (*Table, error) {
 			return nil, err
 		}
 
-		if id, ok := recMap["row"]; ok {
+		if id, ok := recMap["_id"]; ok {
 			recMapID := int(id.(float64))
 			tableFile.offsets[recMapID] = currentOffset
 		}

@@ -247,7 +247,7 @@ func TestReadRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
@@ -267,7 +267,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			err := tf.UpdateRec(3, []byte("{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
+			err := tf.UpdateRec(3, []byte("{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -284,7 +284,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}\n"
+			want := "{\"_id\":3,\"first_name\":\"Bill\",\"last_name\":\"Shakespeare\",\"age\":92}\n"
 			got := string(rec)
 
 			if want != got {
@@ -297,7 +297,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 			tf := newTestTableMem(t)
 			defer tf.Close()
 
-			err := tf.UpdateRec(3, []byte("{\"row\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
+			err := tf.UpdateRec(3, []byte("{\"_id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -314,7 +314,7 @@ func TestUpdateRecTableMemTests(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "{\"row\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
+			want := "{\"_id\":3,\"first_name\":\"William\",\"last_name\":\"Shakespeare\",\"age\":18}\n"
 			got := string(rec)
 
 			if want != got {
