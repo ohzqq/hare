@@ -1,4 +1,4 @@
-package ram
+package store
 
 import (
 	"bufio"
@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ohzqq/hare/datastores/store"
 	"github.com/ohzqq/hare/dberr"
 )
 
@@ -180,7 +179,7 @@ func TestOffsetsTableMemTests(t *testing.T) {
 				want    int
 				wanterr error
 			}{
-				{284, 0, store.PaddingTooShortError{}},
+				{284, 0, PaddingTooShortError{}},
 				{44, 56, nil},
 			}
 
@@ -333,7 +332,7 @@ func TestPadRecTableMemTests(t *testing.T) {
 			//padRec...
 
 			want := "\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-			got := string(store.PadRec(50))
+			got := string(PadRec(50))
 
 			if want != got {
 				t.Errorf("want %v; got %v", want, got)

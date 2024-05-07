@@ -1,12 +1,10 @@
-package ram
+package store
 
 import (
 	"os"
 	"os/exec"
 	"strconv"
 	"testing"
-
-	"github.com/ohzqq/hare/datastores/store"
 )
 
 func runTestFns(t *testing.T, tests []func(t *testing.T)) {
@@ -17,31 +15,15 @@ func runTestFns(t *testing.T, tests []func(t *testing.T)) {
 	}
 }
 
-func newTestRam(t *testing.T) *Ram {
-	d, err := os.ReadFile("./testdata/contacts.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	tables := map[string][]byte{
-		"contacts": d,
-	}
-
-	ram, err := New(tables)
-	if err != nil {
-		t.Fatalf("newTestRam error %v\n", err)
-	}
-	return ram
-}
-
-func newTestTableMem(t *testing.T) *store.Table {
+func newTestTableMem(t *testing.T) *Table {
 	d, err := os.ReadFile("./testdata/contacts.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	mem := store.NewMemFile(d)
+	mem := NewMemFile(d)
 
-	tf, err := store.NewTable(mem)
+	tf, err := NewTable(mem)
 	if err != nil {
 		t.Fatal(err)
 	}
