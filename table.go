@@ -8,9 +8,10 @@ import (
 )
 
 type Table struct {
-	db   *Database
-	lock *sync.RWMutex
-	Name string
+	db   *Database     `json:"-"`
+	lock *sync.RWMutex `json:"-"`
+	Name string        `json:"name"`
+	Row  int           `json:"row"`
 }
 
 // Find takes a record id, and a pointer to a struct that
@@ -51,7 +52,7 @@ func (tbl *Table) IDs() ([]int, error) {
 	tbl.lock.Lock()
 	defer tbl.lock.Unlock()
 
-	ids, err := tbl.db.IDs(tbl.Name)
+	ids, err := tbl.db.store.IDs(tbl.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -124,5 +125,18 @@ func (tbl *Table) Delete(id int) error {
 		return err
 	}
 
+	return nil
+}
+
+func (t *Table) SetID(id int) {
+	t.Row = id
+}
+
+func (t *Table) GetID() int {
+	return t.Row
+}
+
+func (t *Table) AfterFind(db *Database) error {
+	t.db = db
 	return nil
 }
