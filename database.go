@@ -125,6 +125,7 @@ func (db *Database) Delete(tableName string, id int) error {
 	if err != nil {
 		return err
 	}
+	defer tbl.Close()
 
 	if err := tbl.Delete(id); err != nil {
 		return err
@@ -163,6 +164,7 @@ func (db *Database) Find(tableName string, id int, rec Record) error {
 	if err != nil {
 		return err
 	}
+	defer tbl.Close()
 
 	return tbl.Find(id, rec)
 }
@@ -174,6 +176,7 @@ func (db *Database) IDs(tableName string) ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer tbl.Close()
 
 	return tbl.IDs()
 }
@@ -186,6 +189,7 @@ func (db *Database) Insert(tableName string, rec Record) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer tbl.Close()
 
 	return tbl.Insert(rec)
 }
@@ -194,6 +198,11 @@ func (db *Database) Insert(tableName string, rec Record) (int, error) {
 // false if it does not.
 func (db *Database) TableExists(tableName string) bool {
 	return db.tableExists(tableName) && db.store.TableExists(tableName)
+}
+
+// TableNames lists the current tables.
+func (db *Database) TableNames() []string {
+	return db.store.TableNames()
 }
 
 // Update takes a table name and a struct that implements the Record

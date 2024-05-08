@@ -14,7 +14,7 @@ type Table struct {
 
 // Close closes the table.
 func (tbl *Table) Close() error {
-	tbl.db.locks[tbl.Name].Unlock()
+	//tbl.db.locks[tbl.Name].Unlock()
 	tbl.db = nil
 	return nil
 }
@@ -134,15 +134,15 @@ func (tbl *Table) Delete(id int) error {
 }
 
 // Satisfy Record interface so a table can also be a record.
-func (t *Table) SetID(id int) {
-	t.ID = id
+func (tbl *Table) SetID(id int) {
+	tbl.ID = id
 }
 
-func (t *Table) GetID() int {
-	return t.ID
+func (tbl *Table) GetID() int {
+	return tbl.ID
 }
 
-func (t *Table) AfterFind(db *Database) error {
-	t.db = db
+func (tbl *Table) AfterFind(db *Database) error {
+	tbl.db = db
 	return nil
 }
